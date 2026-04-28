@@ -1,6 +1,6 @@
 package com.sergeev.taskmanager.security.internal.jwt;
 
-import com.sergeev.taskmanager.security.api.exception.InvalidRefreshTokenException;
+import com.sergeev.taskmanager.exception.InvalidRefreshTokenException;
 import com.sergeev.taskmanager.security.internal.jwt.entity.RefreshToken;
 import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;

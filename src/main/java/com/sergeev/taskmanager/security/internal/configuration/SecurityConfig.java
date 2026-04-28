@@ -1,6 +1,5 @@
 package com.sergeev.taskmanager.security.internal.configuration;
 
-import com.sergeev.taskmanager.security.api.exception.ErrorResponseHandler;
 import com.sergeev.taskmanager.security.internal.jwt.RefreshTokenAuthenticationFilter;
 import com.sergeev.taskmanager.security.internal.login.LoginAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +37,8 @@ public class SecurityConfig {
     public static final String API_DOCS_ENTRY_POINT = "/api-docs/**";
     public static final String TOKEN_REFRESH_ENTRY_POINT = "/auth/refreshToken";
     private final AuthenticationManager authenticationManager;
-    private final AuthenticationFailureHandler failureHandler;
-    private final ErrorResponseHandler accessDeniedHandler;
     private final AuthenticationSuccessHandler authenticationSuccessHandler;
+    private final AuthenticationFailureHandler failureHandler;
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
@@ -59,8 +57,6 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .exceptionHandling(configurer -> configurer
-                        .accessDeniedHandler(accessDeniedHandler))
                 .sessionManagement(configurer -> configurer
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize

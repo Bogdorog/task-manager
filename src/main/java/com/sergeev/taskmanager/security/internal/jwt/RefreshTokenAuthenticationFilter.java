@@ -1,7 +1,7 @@
 package com.sergeev.taskmanager.security.internal.jwt;
 
+import com.sergeev.taskmanager.exception.AuthMethodNotSupportedException;
 import com.sergeev.taskmanager.security.api.dto.RefreshTokenDTO;
-import com.sergeev.taskmanager.security.api.exception.AuthMethodNotSupportedException;
 import com.sergeev.taskmanager.security.internal.utils.JsonUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

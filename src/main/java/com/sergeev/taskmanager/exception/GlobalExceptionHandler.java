@@ -1,7 +1,6 @@
 package com.sergeev.taskmanager.exception;
 
 import com.sergeev.taskmanager.exception.dto.ErrorResponse;
-import com.sergeev.taskmanager.security.api.exception.InvalidRefreshTokenException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;

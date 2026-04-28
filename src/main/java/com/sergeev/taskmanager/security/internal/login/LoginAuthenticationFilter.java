@@ -1,6 +1,6 @@
 package com.sergeev.taskmanager.security.internal.login;
 
-import com.sergeev.taskmanager.security.api.exception.AuthMethodNotSupportedException;
+import com.sergeev.taskmanager.exception.AuthMethodNotSupportedException;
 import com.sergeev.taskmanager.security.internal.utils.JsonUtils;
 import com.sergeev.taskmanager.user.api.dto.request.LoginRequest;
 import io.github.resilience4j.core.lang.NonNull;

@@ -1,4 +1,4 @@
-package com.sergeev.taskmanager.security.api.exception;
+package com.sergeev.taskmanager.exception;
 
 import org.springframework.security.authentication.AuthenticationServiceException;
 

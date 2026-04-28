@@ -1,4 +1,4 @@
-package com.sergeev.taskmanager.security.api.exception;
+package com.sergeev.taskmanager.exception;
 
 public class InvalidRefreshTokenException extends RuntimeException {
     public InvalidRefreshTokenException(String message) {
