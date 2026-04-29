@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @Slf4j
 public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
@@ -52,7 +53,7 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
             throw new AuthenticationServiceException("Invalid login request payload");
         }
 
-        if (StringUtils.isBlank(loginRequest.login()) || StringUtils.isBlank(loginRequest.password())) {
+        if (StringUtils.isBlank(Objects.requireNonNull(loginRequest).login()) || StringUtils.isBlank(loginRequest.password())) {
             throw new AuthenticationServiceException("Отсутствует логин или пароль");
         }
 

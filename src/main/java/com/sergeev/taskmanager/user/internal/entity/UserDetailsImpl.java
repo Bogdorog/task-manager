@@ -1,6 +1,8 @@
 package com.sergeev.taskmanager.user.internal.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,9 +16,9 @@ public class UserDetailsImpl implements UserDetails {
 
     @Serial
     private static final long serialVersionUID = 1L;
+    @Getter
     private final Long id;
     private final String username;
-    private final String email;
     private final boolean active;
     @JsonIgnore
     private final String password;
@@ -25,7 +27,6 @@ public class UserDetailsImpl implements UserDetails {
     public UserDetailsImpl(final User user, final Collection<? extends GrantedAuthority> authorities) {
         this.id = user.getId();
         this.username = user.getLogin();
-        this.email = user.getEmail();
         this.password = user.getPasswordHash();
         this.authorities = authorities;
         this.active = user.isActive();
@@ -46,12 +47,8 @@ public class UserDetailsImpl implements UserDetails {
         );
     }
 
-    public Long getId() {
-        return id;
-    }
-
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
     }
 
@@ -61,7 +58,7 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     @Override
-    public String getUsername() {
+    public @NonNull String getUsername() {
         return username;
     }
 

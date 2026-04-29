@@ -4,14 +4,16 @@ import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
 import com.sergeev.taskmanager.user.internal.entity.User;
 import com.sergeev.taskmanager.user.internal.entity.UserDetailsImpl;
 import com.sergeev.taskmanager.user.internal.repository.UserRepository;
+import org.jspecify.annotations.NonNull;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class UserDetailsServiceImpl implements CustomUserDetailsService, UserDetailsService {
+public class UserDetailsServiceImpl implements CustomUserDetailsService {
 
     private final UserRepository userRepository;
 
@@ -21,7 +23,7 @@ public class UserDetailsServiceImpl implements CustomUserDetailsService, UserDet
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(final String login) throws UsernameNotFoundException {
+    public @NonNull UserDetails loadUserByUsername(final @NonNull String login) throws UsernameNotFoundException {
         User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new UsernameNotFoundException("Не существует пользователя с логином: " + login));
         return UserDetailsImpl.build(user);
@@ -36,5 +38,11 @@ public class UserDetailsServiceImpl implements CustomUserDetailsService, UserDet
 
     public Long getId(UserDetails user) {
         return ((UserDetailsImpl) user).getId();
+    }
+
+    @Bean
+    @Primary
+    CustomUserDetailsService customUserDetailsService() {
+        return new UserDetailsServiceImpl(userRepository);
     }
 }

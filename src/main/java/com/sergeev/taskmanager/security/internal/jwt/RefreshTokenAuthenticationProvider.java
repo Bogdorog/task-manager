@@ -5,6 +5,7 @@ import com.sergeev.taskmanager.security.internal.jwt.entity.RefreshToken;
 import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -23,7 +24,7 @@ public class RefreshTokenAuthenticationProvider implements AuthenticationProvide
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    public Authentication authenticate(@NonNull Authentication authentication) throws AuthenticationException {
         RefreshJwtAuthenticationToken authToken = (RefreshJwtAuthenticationToken) authentication;
         String rawToken = authToken.getRefreshToken();
 
@@ -58,7 +59,7 @@ public class RefreshTokenAuthenticationProvider implements AuthenticationProvide
     }
 
     @Override
-    public boolean supports(Class<?> authentication) {
+    public boolean supports(@NonNull Class<?> authentication) {
         return RefreshJwtAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }

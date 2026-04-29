@@ -18,7 +18,7 @@ public class AuthenticationManagerConfiguration {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
+            ObjectPostProcessor<Object> objectPostProcessor) {
         AuthenticationManagerBuilder auth =
                 new AuthenticationManagerBuilder(objectPostProcessor);
         auth.authenticationProvider(loginAuthenticationProvider);

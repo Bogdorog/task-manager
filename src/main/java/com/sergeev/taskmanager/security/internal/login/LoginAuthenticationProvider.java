@@ -1,16 +1,16 @@
 package com.sergeev.taskmanager.security.internal.login;
 
-import com.sergeev.taskmanager.user.internal.service.UserDetailsServiceImpl;
+import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
 import io.github.resilience4j.core.lang.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,10 +22,10 @@ import java.util.Objects;
 public class LoginAuthenticationProvider implements AuthenticationProvider {
 
     private final PasswordEncoder passwordEncoder;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Autowired
-    public LoginAuthenticationProvider(final UserDetailsServiceImpl userDetailsService) {
+    public LoginAuthenticationProvider(@Qualifier("customUserDetailsService") final CustomUserDetailsService userDetailsService) {
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.userDetailsService = userDetailsService;
     }
@@ -37,7 +37,7 @@ public class LoginAuthenticationProvider implements AuthenticationProvider {
         String username = (String) authentication.getPrincipal();
         String password = Objects.requireNonNull(authentication.getCredentials()).toString();
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(Objects.requireNonNull(username));
 
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
             log.debug("Аутентификация провалилась: неправильный логин или пароль '{}'", username);

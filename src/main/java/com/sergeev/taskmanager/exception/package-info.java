@@ -1,3 +1,4 @@
+@org.springframework.modulith.NamedInterface("api")
 @ApplicationModule(
         type = ApplicationModule.Type.OPEN
 )

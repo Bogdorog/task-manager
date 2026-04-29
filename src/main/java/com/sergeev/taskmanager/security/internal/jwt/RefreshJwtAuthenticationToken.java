@@ -1,5 +1,6 @@
 package com.sergeev.taskmanager.security.internal.jwt;
 
+import lombok.Getter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -7,6 +8,7 @@ import java.util.Collections;
 
 public class RefreshJwtAuthenticationToken extends AbstractAuthenticationToken {
 
+    @Getter
     private final String refreshToken;
     private final Object principal;
 
@@ -36,7 +38,4 @@ public class RefreshJwtAuthenticationToken extends AbstractAuthenticationToken {
         return principal;
     }
 
-    public String getRefreshToken() {
-        return refreshToken;
-    }
 }

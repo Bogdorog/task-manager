@@ -60,48 +60,45 @@ public class MediaService implements MediaApi{
     @Override
     public CompletableFuture<MediaAssetDto> upload(MultipartFile file, Long ownerId, Long incidentId) throws Exception {
         return fileStorage.save(file)
-                .thenApply(result -> tx.execute(status -> {
-
-                    return mediaRepo.findById(result.id())
-                            .map(existing -> {
-                                if (incidentId == null) {
-                                    // Личное фото/аватар: проверяем, нет ли уже связи с NULL
-                                    if (incidentMediaRepo.findByMediaAssetIdAndIncidentIdNull(existing.getId(), ownerId).isEmpty()) {
-                                        IncidentMedia link = new IncidentMedia();
-                                        link.setIncidentId(null);
-                                        link.setMediaAsset(existing);
-                                        link.setUserId(ownerId);
-                                        incidentMediaRepo.save(link);
-                                    }
-                                } else {
-                                    // Файл уже есть в хранилище — просто создаём новую привязку к инциденту
-                                    if (incidentMediaRepo.findByMediaAssetIdAndIncidentId(existing.getId(), incidentId).isEmpty()) {
-                                        IncidentMedia link = new IncidentMedia();
-                                        link.setIncidentId(incidentId);
-                                        link.setMediaAsset(existing);
-                                        link.setUserId(ownerId);
-                                        incidentMediaRepo.save(link);
-                                    }
+                .thenApply(result -> tx.execute(status -> mediaRepo.findById(result.id())
+                        .map(existing -> {
+                            if (incidentId == null) {
+                                // Личное фото/аватар: проверяем, нет ли уже связи с NULL
+                                if (incidentMediaRepo.findByMediaAssetIdAndIncidentIdNull(existing.getId(), ownerId).isEmpty()) {
+                                    IncidentMedia link = new IncidentMedia();
+                                    link.setIncidentId(null);
+                                    link.setMediaAsset(existing);
+                                    link.setUserId(ownerId);
+                                    incidentMediaRepo.save(link);
                                 }
-                                return mediaMapper.toResponse(existing, buildDownloadUrl(existing.getId()));
-                            })
-                            .orElseGet(() -> {
-                                // Новый файл — создаём сущность и привязку
-                                MediaAsset asset = new MediaAsset();
-                                asset.setId(result.id());
-                                asset.setFileName(file.getOriginalFilename());
-                                asset.setFilePath(result.filePath());
-                                mediaRepo.save(asset);
+                            } else {
+                                // Файл уже есть в хранилище — просто создаём новую привязку к инциденту
+                                if (incidentMediaRepo.findByMediaAssetIdAndIncidentId(existing.getId(), incidentId).isEmpty()) {
+                                    IncidentMedia link = new IncidentMedia();
+                                    link.setIncidentId(incidentId);
+                                    link.setMediaAsset(existing);
+                                    link.setUserId(ownerId);
+                                    incidentMediaRepo.save(link);
+                                }
+                            }
+                            return mediaMapper.toResponse(existing, buildDownloadUrl(existing.getId()));
+                        })
+                        .orElseGet(() -> {
+                            // Новый файл — создаём сущность и привязку
+                            MediaAsset asset = new MediaAsset();
+                            asset.setId(result.id());
+                            asset.setFileName(file.getOriginalFilename());
+                            asset.setFilePath(result.filePath());
+                            mediaRepo.save(asset);
 
-                                IncidentMedia link = new IncidentMedia();
-                                link.setIncidentId(incidentId);
-                                link.setMediaAsset(asset);
-                                link.setUserId(ownerId);
-                                incidentMediaRepo.save(link);
+                            IncidentMedia link = new IncidentMedia();
+                            link.setIncidentId(incidentId);
+                            link.setMediaAsset(asset);
+                            link.setUserId(ownerId);
+                            incidentMediaRepo.save(link);
 
-                                return mediaMapper.toResponse(asset, buildDownloadUrl(asset.getId()));
-                            });
-                }));
+                            return mediaMapper.toResponse(asset, buildDownloadUrl(asset.getId()));
+                        })));
     }
 
     @Override

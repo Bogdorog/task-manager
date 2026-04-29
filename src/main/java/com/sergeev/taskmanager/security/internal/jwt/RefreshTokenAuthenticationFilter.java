@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -35,8 +36,8 @@ public class RefreshTokenAuthenticationFilter extends AbstractAuthenticationProc
     }
 
     @Override
-    public Authentication attemptAuthentication(final HttpServletRequest request,
-                                                final HttpServletResponse response) throws AuthenticationException {
+    public Authentication attemptAuthentication(final @NonNull HttpServletRequest request,
+                                                final @NonNull HttpServletResponse response) throws AuthenticationException {
         validateRequest(request);
         RefreshTokenDTO refreshTokenDto = getRefreshTokenDTO(request);
         validateRefreshToken(refreshTokenDto);
@@ -67,17 +68,17 @@ public class RefreshTokenAuthenticationFilter extends AbstractAuthenticationProc
     }
 
     @Override
-    protected void successfulAuthentication(final HttpServletRequest request,
-                                            final HttpServletResponse response,
-                                            final FilterChain chain,
-                                            final Authentication authResult) throws IOException, ServletException {
+    protected void successfulAuthentication(final @NonNull HttpServletRequest request,
+                                            final @NonNull HttpServletResponse response,
+                                            final @NonNull FilterChain chain,
+                                            final @NonNull Authentication authResult) throws IOException, ServletException {
         this.successHandler.onAuthenticationSuccess(request, response, authResult);
     }
 
     @Override
-    protected void unsuccessfulAuthentication(final HttpServletRequest request,
-                                              final HttpServletResponse response,
-                                              final AuthenticationException failed) throws IOException, ServletException {
+    protected void unsuccessfulAuthentication(final @NonNull HttpServletRequest request,
+                                              final @NonNull HttpServletResponse response,
+                                              final @NonNull AuthenticationException failed) throws IOException, ServletException {
         this.failureHandler.onAuthenticationFailure(request, response, failed);
     }
 }

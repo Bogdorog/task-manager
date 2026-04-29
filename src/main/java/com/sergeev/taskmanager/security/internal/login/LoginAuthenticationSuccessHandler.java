@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +16,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -26,12 +28,12 @@ public class LoginAuthenticationSuccessHandler implements AuthenticationSuccessH
     private final CustomUserDetailsService userDetailsService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+    public void onAuthenticationSuccess(@NonNull HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails);
+        String newAccessToken = jwtTokenProvider.generateAccessToken(Objects.requireNonNull(userDetails));
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userDetailsService.getId(userDetails));
 
         response.setContentType("application/json");
