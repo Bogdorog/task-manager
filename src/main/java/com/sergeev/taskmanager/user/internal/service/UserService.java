@@ -3,12 +3,16 @@ package com.sergeev.taskmanager.user.internal.service;
 import com.sergeev.taskmanager.media.api.MediaApi;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.request.*;
+import com.sergeev.taskmanager.user.api.event.AccountDeletionRequestedEvent;
 import com.sergeev.taskmanager.user.api.event.PasswordResetRequestedEvent;
+import com.sergeev.taskmanager.user.internal.entity.AccountDeleteToken;
 import com.sergeev.taskmanager.user.internal.entity.PasswordResetToken;
 import com.sergeev.taskmanager.user.internal.entity.Role;
 import com.sergeev.taskmanager.user.internal.entity.User;
 import com.sergeev.taskmanager.user.internal.mapper.UserMapper;
+import com.sergeev.taskmanager.user.internal.repository.AccountDeleteTokenRepository;
 import com.sergeev.taskmanager.user.internal.repository.PasswordResetTokenRepository;
+import com.sergeev.taskmanager.user.internal.repository.RoleRepository;
 import com.sergeev.taskmanager.user.internal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +38,12 @@ public class UserService {
     private final UserRepository repository;
     private final ApplicationEventPublisher publisher;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordResetTokenRepository tokenRepository;
+    private final PasswordResetTokenRepository passwordResetRepository;
     private final PasswordChangeService passwordChangeService;
+    private final AccountDeleteService accountDeleteService;
+    private final AccountDeleteTokenRepository accountDeleteRepository;
     private final MediaApi mediaApi;
+    private final RoleRepository roleRepository;
 
     @Transactional
     @CachePut(value = "user", key = "#request.login()")
@@ -56,7 +63,8 @@ public class UserService {
 
         String hash = passwordEncoder.encode(request.password());
         // У всех по умолчанию роль пользователя
-        Role role = new Role(2L, "USER");
+        Role role = roleRepository.findByName("USER")
+                .orElseThrow(() -> new IllegalStateException("Роль по умолчанию не найдена"));
 
         User user = User.builder()
                 .login(request.login())
@@ -97,10 +105,19 @@ public class UserService {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 
+        if (!user.getEmail().equals(request.email()) && repository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("Пользователь с таким e-mail уже существует");
+        }
+
+        if (!user.getPhone().equals(request.phone()) && repository.existsByPhone(request.phone())) {
+            throw new IllegalArgumentException("Пользователь с таким номером телефона уже существует");
+        }
+
         user.setEmail(request.email());
         user.setFullName(request.fullName());
         user.setPhone(request.phone());
         user.setAddress(request.address());
+        user.setUpdatedAt(LocalDateTime.now());
 
         return userMapper.toResponse(user);
     }
@@ -131,6 +148,22 @@ public class UserService {
         return user.getRole().getName();
     }
 
+    //=============================
+    // СМЕНА ПАРОЛЯ (в профиле и через почту)
+    //=============================
+    // Можно на клиенте сделать два отдельных окна, тогда функции будет две - для проверки пароля и для смены
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+
+        User user = repository.findById(userId).orElseThrow();
+
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Неверный пароль");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+    }
+    // Смена через почту
     // Первый запрос о смене пароля
     @Transactional
     public void initiatePasswordReset(PasswordResetRequest request) {
@@ -148,7 +181,7 @@ public class UserService {
                         LocalDateTime.now().plusHours(1)
                 );
 
-        tokenRepository.save(resetToken);
+        passwordResetRepository.save(resetToken);
 
         // публикуем событие
         publisher.publishEvent(
@@ -165,28 +198,28 @@ public class UserService {
         String tokenHash = passwordChangeService.hashToken(request.token());
 
         PasswordResetToken resetToken =
-                tokenRepository.findByTokenHash(tokenHash)
+                passwordResetRepository.findByTokenHash(tokenHash)
                         .orElseThrow(() ->
-                                new IllegalArgumentException("Invalid token"));
+                                new IllegalArgumentException("Неправильный токен"));
 
         if (resetToken.isExpired()) {
-            throw new IllegalStateException("Token expired");
+            throw new IllegalStateException("Срок действия ссылки истек");
         }
 
         if (resetToken.isUsed()) {
-            throw new IllegalStateException("Token already used");
+            throw new IllegalStateException("Данная ссылка уже была использована");
         }
 
         User user = repository.findById(resetToken.getUserId())
                 .orElseThrow();
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        tokenRepository.invalidateAllForUser(user.getId());
+        passwordResetRepository.invalidateAllForUser(user.getId());
 
         resetToken.markUsed();
 
         repository.save(user);
-        tokenRepository.save(resetToken);
+        passwordResetRepository.save(resetToken);
     }
 
     @Transactional
@@ -237,5 +270,57 @@ public class UserService {
         }
 
         return userMapper.toResponse(user);
+    }
+
+    // Удаление аккаунта
+    @Transactional
+    public void requestAccountDeletion(String login) {
+
+        User user = repository.findByLogin(login)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+
+        String token = accountDeleteService.generateToken();
+
+        AccountDeleteToken deleteToken = new AccountDeleteToken(
+                user.getId(),
+                token,
+                LocalDateTime.now().plusMinutes(15)
+        );
+
+        accountDeleteRepository.save(deleteToken);
+
+        publisher.publishEvent(new AccountDeletionRequestedEvent(
+                user.getEmail(),
+                token
+        ));
+    }
+
+    @Transactional
+    public void confirmAccountDeletion(String token) {
+
+        AccountDeleteToken deleteToken = accountDeleteRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Неправильный код"));
+
+        if (deleteToken.isExpired()) {
+            throw new IllegalStateException("Срок действия кода истек");
+        }
+
+        Long userId = deleteToken.getUserId();
+
+        repository.deleteById(userId);
+        accountDeleteRepository.deleteById(deleteToken.getId());
+    }
+
+    // Смена статуса аккаунта для админов
+    @Transactional
+    public void activate(Long userId) {
+        User user = repository.findById(userId).orElseThrow();
+        user.setActive(true);
+    }
+
+    @Transactional
+    public void deactivate(Long userId) {
+        User user = repository.findById(userId).orElseThrow();
+        user.setActive(false);
     }
 }

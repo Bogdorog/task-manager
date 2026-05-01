@@ -3,6 +3,7 @@ package com.sergeev.taskmanager.user.internal.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -45,4 +46,10 @@ public class User {
 
     @Column(nullable = false)
     private boolean active;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }
