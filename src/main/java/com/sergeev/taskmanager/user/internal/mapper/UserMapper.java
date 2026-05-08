@@ -19,4 +19,7 @@ public interface UserMapper {
     @Mapping(target = "login", source = "login")
     @Mapping(target = "avatarUrl", source = "avatarMediaId", qualifiedByName = "resolveAvatarUrl")
     UserDto toResponse(User user);
+
+    @Mapping(target = "role", expression = "java(user.getRole().getName())")
+    UserDto toShortResponse(User user);
 }

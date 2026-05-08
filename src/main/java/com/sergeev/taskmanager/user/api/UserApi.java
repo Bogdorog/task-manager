@@ -8,9 +8,9 @@ import java.util.concurrent.CompletableFuture;
 
 public interface UserApi {
 
-    void registerUser(RegisterUserRequest request);
+    UserDto registerUser(RegisterUserRequest request);
 
-    void login(LoginRequest request);
+    UserDto login(LoginRequest request);
 
     void initiatePasswordReset(PasswordResetRequest request);
 

@@ -32,6 +32,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'org.springframework.modulith:spring-modulith-starter-core'
+    implementation 'org.springframework.modulith:spring-modulith-core'
     implementation 'org.springframework.modulith:spring-modulith-events-core:2.0.5'
     implementation 'org.springframework.modulith:spring-modulith-starter-jdbc:2.0.5'
     implementation 'commons-io:commons-io:2.20.0'

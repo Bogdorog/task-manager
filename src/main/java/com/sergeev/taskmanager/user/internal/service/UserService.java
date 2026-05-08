@@ -82,7 +82,7 @@ public class UserService {
         return userMapper.toResponse(user);
     }
 
-    public void login(LoginRequest request) {
+    public UserDto login(LoginRequest request) {
 
         User user = repository.findByLogin(request.login())
                             .orElseThrow(() ->
@@ -95,6 +95,8 @@ public class UserService {
         if (!user.isActive()) {
             throw new IllegalStateException("Статус пользователя не активен");
         }
+
+        return userMapper.toResponse(user);
     }
 
     @Transactional

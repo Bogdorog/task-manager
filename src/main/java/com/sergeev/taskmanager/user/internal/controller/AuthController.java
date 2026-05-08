@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.user.internal.controller;
 
 import com.sergeev.taskmanager.user.api.UserApi;
+import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.request.LoginRequest;
 import com.sergeev.taskmanager.user.api.dto.request.RegisterUserRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,9 +14,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "Авторизация и Регистрация")
 public class AuthController {
 
@@ -28,7 +32,7 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "Регистрация пользователя")
     @ApiResponse(
-            responseCode = "200",
+            responseCode = "201",
             description = "Пользователь успешно зарегистрирован."
     )
     @ApiResponse(
@@ -36,8 +40,9 @@ public class AuthController {
             description = "Ошибка на сервере."
     )
     public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest request) {
-        userApi.registerUser(request);
-        return ResponseEntity.ok("Пользователь успешно зарегистрирован.");
+        UserDto user = userApi.registerUser(request);
+        URI location= ServletUriComponentsBuilder.fromUriString("http://localhost:54455/api/user").path("/{login}").buildAndExpand(user.login()).toUri();
+        return ResponseEntity.created(location).body("Пользователь успешно зарегистрирован.");
     }
 
     @PostMapping("/login")
@@ -52,7 +57,6 @@ public class AuthController {
             description = "Ошибка на сервере."
     )
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        userApi.login(request);
-        return ResponseEntity.ok("");
+        return ResponseEntity.ok(userApi.login(request));
     }
 }

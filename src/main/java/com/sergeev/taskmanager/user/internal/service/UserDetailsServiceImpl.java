@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.user.internal.service;
 
 import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import com.sergeev.taskmanager.user.internal.entity.User;
 import com.sergeev.taskmanager.user.internal.entity.UserDetailsImpl;
 import com.sergeev.taskmanager.user.internal.repository.UserRepository;
@@ -38,6 +39,10 @@ public class UserDetailsServiceImpl implements CustomUserDetailsService {
 
     public Long getId(UserDetails user) {
         return ((UserDetailsImpl) user).getId();
+    }
+
+    public UserShortDto getUser(UserDetails user) {
+        return ((UserDetailsImpl) user).getUser();
     }
 
     @Bean

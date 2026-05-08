@@ -15,8 +15,8 @@ class UserPublicApiImpl implements UserApi {
 
     private final UserService service;
 
-    public void registerUser(RegisterUserRequest request) {
-        service.register(request);
+    public UserDto registerUser(RegisterUserRequest request) {
+        return service.register(request);
     }
 
     public UserDto getUser(String login) {
@@ -29,8 +29,8 @@ class UserPublicApiImpl implements UserApi {
 
     public String getRole(Long id) {return service.getRole(id);}
 
-    public void login(LoginRequest request) {
-        service.login(request);
+    public UserDto login(LoginRequest request) {
+        return service.login(request);
     }
 
     public void initiatePasswordReset(PasswordResetRequest request) {

@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.user.internal.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,6 +19,8 @@ public class UserDetailsImpl implements UserDetails {
     private static final long serialVersionUID = 1L;
     @Getter
     private final Long id;
+    private final String fullname;
+    private final String role;
     private final String username;
     private final boolean active;
     @JsonIgnore
@@ -27,6 +30,8 @@ public class UserDetailsImpl implements UserDetails {
     public UserDetailsImpl(final User user, final Collection<? extends GrantedAuthority> authorities) {
         this.id = user.getId();
         this.username = user.getLogin();
+        this.fullname = user.getFullName();
+        this.role = user.getRole().getName();
         this.password = user.getPasswordHash();
         this.authorities = authorities;
         this.active = user.isActive();
@@ -90,5 +95,10 @@ public class UserDetailsImpl implements UserDetails {
             return false;
         UserDetailsImpl user = (UserDetailsImpl) o;
         return Objects.equals(id, user.id);
+    }
+
+    public UserShortDto getUser()
+    {
+        return new UserShortDto(this.id, this.username, this.fullname, this.role);
     }
 }

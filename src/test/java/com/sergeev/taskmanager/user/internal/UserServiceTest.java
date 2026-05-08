@@ -195,7 +195,6 @@ class UserServiceTest {
         when(repository.existsByPhone("+12345678901")).thenReturn(false);
         when(repository.existsByLogin("login")).thenReturn(false);
         when(passwordEncoder.encode("pass")).thenReturn("hash");
-
         User savedUser = User.builder().id(1L).build();
         when(repository.save(any())).thenReturn(savedUser);
         when(userMapper.toResponse(any()))

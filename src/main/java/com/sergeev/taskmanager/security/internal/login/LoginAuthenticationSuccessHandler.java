@@ -2,6 +2,8 @@ package com.sergeev.taskmanager.security.internal.login;
 
 import com.sergeev.taskmanager.security.internal.jwt.JwtTokenProvider;
 import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
+import com.sergeev.taskmanager.user.api.dto.AuthResult;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Objects;
 
 @Component
@@ -40,11 +41,9 @@ public class LoginAuthenticationSuccessHandler implements AuthenticationSuccessH
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpStatus.OK.value());
 
-        Map<String, String> tokens = Map.of(
-                "token", newAccessToken,
-                "refreshToken", newRefreshToken
-        );
+        UserShortDto user = userDetailsService.getUser(userDetails);
+        AuthResult body = new AuthResult(newAccessToken, newRefreshToken, user);
 
-        objectMapper.writeValue(response.getWriter(), tokens);
+        objectMapper.writeValue(response.getWriter(), body);
     }
 }
