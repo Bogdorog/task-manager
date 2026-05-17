@@ -8,7 +8,7 @@ import java.security.SecureRandom;
 public class AccountDeleteService {
 
     public String generateToken() {
-        Integer random = new SecureRandom().nextInt(100000,999999);
-        return random.toString();
+        int random = new SecureRandom().nextInt(100000,999999);
+        return Integer.toString(random);
     }
 }

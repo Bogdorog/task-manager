@@ -1,10 +1,13 @@
 package com.sergeev.taskmanager.company.internal.controller;
 
 import com.sergeev.taskmanager.company.api.dto.CompanyDto;
+import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
 import com.sergeev.taskmanager.company.api.dto.request.*;
-import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
 import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
+import com.sergeev.taskmanager.company.internal.service.CompanyMembershipService;
+import com.sergeev.taskmanager.company.internal.service.CompanyRoleService;
 import com.sergeev.taskmanager.company.internal.service.CompanyService;
+import com.sergeev.taskmanager.exception.BusinessRuleException;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CompanyController {
 
+    private final CompanyMembershipService membershipService;
+    private final CompanyRoleService roleService;
     private final CompanyService service;
     private final SecurityFacadeApi security;
 
@@ -58,14 +63,14 @@ public class CompanyController {
     @PostMapping("/{companyId}/members")
     public void inviteUser(
             @RequestBody InviteUserRequest request
-    ) {
-        service.inviteUser(request);
+    ) throws BusinessRuleException {
+        membershipService.inviteUser(request);
     }
 
     // GET MEMBERS
     @GetMapping("/{companyId}/members")
-    public List<CompanyMembership> getMembers(@PathVariable Long companyId) {
-        return service.getMembers(
+    public List<CompanyMembershipDto> getMembers(@PathVariable Long companyId) {
+        return membershipService.getMembers(
                 companyId,
                 security.getCurrentUserId()
         );
@@ -73,20 +78,20 @@ public class CompanyController {
 
     // REMOVE USER
     @DeleteMapping("/{companyId}/members/{membershipId}")
-    public void removeUser(@RequestBody DeleteMemberRequest request) {
-        service.removeUser(request);
+    public void removeUser(@RequestBody DeleteMemberRequest request) throws BusinessRuleException {
+        membershipService.removeUser(request);
     }
 
     // LEAVE COMPANY
     @DeleteMapping("/{companyId}/leave")
-    public void leave(@RequestBody LeaveCompanyRequest request) {
-        service.leaveCompany(request);
+    public void leave(@RequestBody LeaveCompanyRequest request) throws BusinessRuleException {
+        membershipService.leaveCompany(request);
     }
 
     // GET ROLES
     @GetMapping("/{companyId}/roles")
     public List<CompanyRole> getRoles(@PathVariable Long companyId) {
-        return service.getRoles(
+        return roleService.getRoles(
                 companyId,
                 security.getCurrentUserId()
         );
@@ -96,9 +101,9 @@ public class CompanyController {
     @PostMapping("/{companyId}/roles")
     public void createRole(
             @PathVariable Long companyId,
-            @RequestBody CreateRoleRequest request
+            @RequestBody RoleRequest request
     ) {
-        service.createRole(
+        roleService.createRole(
                 request
         );
     }
@@ -111,7 +116,7 @@ public class CompanyController {
             @PathVariable Long companyId,
             @RequestBody DeleteRoleRequest request
     ) {
-        service.deleteRole(request);
+        roleService.deleteRole(request);
     }
 
     // =========================
@@ -123,7 +128,7 @@ public class CompanyController {
             @PathVariable Long membershipId,
             @RequestBody AssignRoleRequest request
     ) {
-        service.assignRole(request);
+        roleService.assignRole(request);
     }
 
     // =========================
@@ -133,7 +138,7 @@ public class CompanyController {
     public void transferOwner(
             @PathVariable Long companyId,
             @RequestBody TransferOwnershipRequest request
-    ) {
+    ) throws BusinessRuleException {
         service.transferOwnership(request);
     }
 }

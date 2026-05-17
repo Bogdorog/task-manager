@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.user.internal.mapper;
 
 import com.sergeev.taskmanager.user.api.dto.UserDto;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import com.sergeev.taskmanager.user.internal.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -18,8 +19,8 @@ public interface UserMapper {
     @Mapping(target = "role", expression = "java(user.getRole().getName())")
     @Mapping(target = "login", source = "login")
     @Mapping(target = "avatarUrl", source = "avatarMediaId", qualifiedByName = "resolveAvatarUrl")
-    UserDto toResponse(User user);
+    UserDto toDto(User user);
 
     @Mapping(target = "role", expression = "java(user.getRole().getName())")
-    UserDto toShortResponse(User user);
+    UserShortDto toShortDto(User user);
 }

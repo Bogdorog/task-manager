@@ -34,9 +34,4 @@ public class CompanyMembership {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime joinedAt;
-
-    @PrePersist
-    public void prePersist() {
-        joinedAt = LocalDateTime.now();
-    }
 }

@@ -1,6 +1,7 @@
-package com.sergeev.taskmanager.company.api.dto.request;
+package com.sergeev.taskmanager.task.api.dto.request;
 
-public record CreateRoleRequest(
+public record CreateBoardRequest(
+
         Long actorId,
         Long companyId,
         String name,

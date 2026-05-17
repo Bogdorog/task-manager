@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 public class Company {
 
+    public static final String OWNER = "OWNER";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

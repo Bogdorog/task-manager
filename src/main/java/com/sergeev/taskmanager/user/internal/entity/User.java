@@ -47,7 +47,7 @@ public class User {
     @Column(nullable = false)
     private boolean active;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

@@ -197,7 +197,7 @@ class UserServiceTest {
         when(passwordEncoder.encode("pass")).thenReturn("hash");
         User savedUser = User.builder().id(1L).build();
         when(repository.save(any())).thenReturn(savedUser);
-        when(userMapper.toResponse(any()))
+        when(userMapper.toDto(any()))
                 .thenReturn(new UserDto(1L, "login", null, null, null, null, null, null));
         UserDto userDto = userService.register(request);
         Assertions.assertNotNull(userDto);
@@ -235,7 +235,7 @@ class UserServiceTest {
         when(repository.findByLogin("login"))
                 .thenReturn(Optional.of(activeUser));
 
-        when(userMapper.toResponse(any()))
+        when(userMapper.toDto(any()))
                 .thenReturn(new UserDto(activeUser.getId(),
                         activeUser.getLogin(),
                         activeUser.getFullName(),
@@ -254,7 +254,7 @@ class UserServiceTest {
         when(repository.findByLogin("login"))
                 .thenReturn(Optional.of(activeUser));
 
-        when(userMapper.toResponse(activeUser))
+        when(userMapper.toDto(activeUser))
                 .thenReturn(new UserDto(activeUser.getId(),
                         activeUser.getLogin(),
                         activeUser.getFullName(),

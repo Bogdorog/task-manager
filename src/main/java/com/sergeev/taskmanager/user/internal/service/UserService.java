@@ -79,7 +79,7 @@ public class UserService {
         repository.save(user);
 
         // Чтобы работал кэш, нигде дальше использоваться не должен
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     public UserDto login(LoginRequest request) {
@@ -96,7 +96,7 @@ public class UserService {
             throw new IllegalStateException("Статус пользователя не активен");
         }
 
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     @Transactional
@@ -121,21 +121,22 @@ public class UserService {
         user.setAddress(request.address());
         user.setUpdatedAt(LocalDateTime.now());
 
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     @Cacheable(value = "user", key = "#login")
     public UserDto get(String login) {
         User user = repository.findByLogin(login)
                 .orElseThrow();
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     // Служебный запрос для поиска, кэш не нужен
     public UserDto getById(Long id) {
         User user = repository.findById(id)
-                .orElseThrow();
-        return userMapper.toResponse(user);
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+        return userMapper.toDto(user);
     }
 
     public String getRole(String login) {
@@ -247,7 +248,7 @@ public class UserService {
 
                     user.setAvatarMediaId(dto.id());
                     repository.save(user);
-                    return userMapper.toResponse(user);
+                    return userMapper.toDto(user);
                 });
     }
 
@@ -271,7 +272,7 @@ public class UserService {
             }
         }
 
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     // Удаление аккаунта
