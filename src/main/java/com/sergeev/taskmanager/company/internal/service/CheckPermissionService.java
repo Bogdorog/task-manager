@@ -8,7 +8,6 @@ import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyMembershipMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
-import com.sergeev.taskmanager.task.internal.service.TaskCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CheckPermissionService implements CheckPermissionApi {
     private final CompanyMembershipRepository membershipRepository;
     private final CompanyMembershipMapper membershipMapper;
-    private final TaskCommandService taskService;
 
     @Override
     public void checkCompanyPermission(
@@ -43,9 +41,8 @@ public class CheckPermissionService implements CheckPermissionApi {
 
     public void checkCanViewTask(
             Long userId,
-            Long taskId
+            TaskDto task
     ) {
-        TaskDto task = taskService.getTaskById(taskId);
 
         if (!hasCompanyPermission(userId, task.companyId(),
                 PermissionEnum.VIEW_ALL_TASKS.getTitle()) || userId.equals(task.createdBy())

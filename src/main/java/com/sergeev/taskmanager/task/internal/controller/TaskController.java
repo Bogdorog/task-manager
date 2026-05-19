@@ -5,8 +5,8 @@ import com.sergeev.taskmanager.task.api.dto.TaskCommentDto;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 import com.sergeev.taskmanager.task.api.dto.request.*;
 import com.sergeev.taskmanager.task.internal.service.BoardService;
-import com.sergeev.taskmanager.task.internal.service.TaskCommandService;
 import com.sergeev.taskmanager.task.internal.service.TaskQueryService;
+import com.sergeev.taskmanager.task.internal.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskController {
 
-    private final TaskCommandService commandService;
+    private final TaskService commandService;
     private final TaskQueryService queryService;
     private final BoardService boardService;
 

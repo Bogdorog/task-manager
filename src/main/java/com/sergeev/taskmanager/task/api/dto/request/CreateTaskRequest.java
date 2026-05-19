@@ -8,6 +8,7 @@ public record CreateTaskRequest(
 
         Long actorId,
         Long companyId,
+        Long columnId,
 
         String title,
         String description,

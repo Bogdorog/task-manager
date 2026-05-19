@@ -65,7 +65,7 @@ public class Task {
     private LocalDateTime updatedAt;
 
     @OneToMany(
-            mappedBy = "task",
+            mappedBy = "taskId",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
@@ -73,7 +73,7 @@ public class Task {
     private List<TaskComment> comments = new ArrayList<>();
 
     @OneToMany(
-            mappedBy = "task",
+            mappedBy = "taskId",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
@@ -81,7 +81,7 @@ public class Task {
     private List<TaskAttachment> attachments = new ArrayList<>();
 
     @OneToMany(
-            mappedBy = "task",
+            mappedBy = "taskId",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )

@@ -36,7 +36,7 @@ public class BoardColumn {
 
     @Builder.Default
     @OneToMany(
-            mappedBy = "column",
+            mappedBy = "columnId",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )

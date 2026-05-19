@@ -52,7 +52,22 @@ public class TaskQueryService {
                         )
                 );
 
-        permissionApi.checkCanViewTask(actorId, taskId);
+        TaskDto dto = taskMapper.toDto(task);
+
+        permissionApi.checkCanViewTask(actorId, dto);
+
+        return dto;
+    }
+
+    public TaskDto getTaskById(Long taskId) {
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                NOT_FOUND,
+                                "Задача не найдена"
+                        )
+                );
 
         return taskMapper.toDto(task);
     }
@@ -188,7 +203,7 @@ public class TaskQueryService {
                         )
                 );
 
-        permissionApi.checkCanViewTask(actorId, taskId);
+        permissionApi.checkCanViewTask(actorId, taskMapper.toDto(task));
 
         return commentRepository.findAllByTaskId(taskId)
                 .stream()
@@ -216,7 +231,7 @@ public class TaskQueryService {
                         )
                 );
 
-        permissionApi.checkCanViewTask(actorId, taskId);
+        permissionApi.checkCanViewTask(actorId, taskMapper.toDto(task));
 
         return historyRepository.findAllByTaskIdOrderByChangedAtDesc(taskId);
     }

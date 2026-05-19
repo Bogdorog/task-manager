@@ -16,7 +16,8 @@ public enum PermissionEnum {
     MANAGE_BOARDS("MANAGE_BOARDS"),
     // Это разрешение не должно появляться в бд,
     // но является внутренним условием на вызов особой проверки
-    COMMENT_TASK("COMMENT_TASK");
+    COMMENT_TASK("COMMENT_TASK"),
+    DELETE_COMMENT("DELETE_COMMENT");
 
     private final String title;
 

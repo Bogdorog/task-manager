@@ -198,7 +198,7 @@ public class BoardService {
         );
 
         boolean hasTasks =
-                taskRepository.existsByBoardColumnId(
+                taskRepository.existsByColumnId(
                         column.getId()
                 );
 

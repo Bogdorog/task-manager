@@ -3,7 +3,7 @@ package com.sergeev.taskmanager.task.internal.service;
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
-import com.sergeev.taskmanager.task.api.TaskCommandApi;
+import com.sergeev.taskmanager.task.api.TaskApi;
 import com.sergeev.taskmanager.task.api.dto.TaskCommentDto;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 import com.sergeev.taskmanager.task.api.dto.request.*;
@@ -23,12 +23,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class TaskCommandService implements TaskCommandApi {
+public class TaskService implements TaskApi {
 
     private final TaskRepository taskRepository;
     private final TaskCommentRepository commentRepository;
@@ -76,10 +74,10 @@ public class TaskCommandService implements TaskCommandApi {
                 request.companyId()
         );
 
-        Integer nextPosition =
+        /*Integer nextPosition =
                 taskRepository.getNextPositionInColumn(
                         column.getId()
-                );
+                );*/
 
         Task task = Task.builder()
                 .title(request.title())
@@ -202,7 +200,7 @@ public class TaskCommandService implements TaskCommandApi {
 
         permissionApi.checkCanViewTask(
                 request.actorId(),
-                task.getId()
+                taskMapper.toDto(task)
         );
 
         TaskStatus oldStatus = task.getStatus();
@@ -236,7 +234,7 @@ public class TaskCommandService implements TaskCommandApi {
 
         permissionApi.checkCanViewTask(
                 request.actorId(),
-                task.getId()
+                taskMapper.toDto(task)
         );
 
         permissionApi.checkCompanyPermission(
@@ -339,21 +337,6 @@ public class TaskCommandService implements TaskCommandApi {
         taskRepository.delete(task);
     }
 
-
-    // Utils
-    public TaskDto getTaskById(Long taskId) {
-
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Задача не найдена"
-                        )
-                );
-
-        return taskMapper.toDto(task);
-    }
-
     // =========================================================
     // PRIVATE METHODS
     // =========================================================
@@ -406,27 +389,6 @@ public class TaskCommandService implements TaskCommandApi {
                     HttpStatus.BAD_REQUEST,
                     "Исполнитель не состоит в компании"
             );
-        }
-    }
-
-    private boolean hasPermission(
-            Long userId,
-            Long companyId,
-            PermissionEnum permission
-    ) {
-
-        try {
-
-            permissionApi.checkCompanyPermission(
-                    userId,
-                    companyId,
-                    permission.name()
-            );
-
-            return true;
-
-        } catch (Exception ex) {
-            return false;
         }
     }
 

@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    boolean existsByBoardColumnId(Long columnId);
+    boolean existsByColumnId(Long columnId);
 
     List<Task> findAllByCompanyId(Long companyId);
 

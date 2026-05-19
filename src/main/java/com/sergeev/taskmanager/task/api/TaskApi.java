@@ -4,7 +4,7 @@ import com.sergeev.taskmanager.task.api.dto.TaskCommentDto;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 import com.sergeev.taskmanager.task.api.dto.request.*;
 
-public interface TaskCommandApi {
+public interface TaskApi {
 
     TaskDto createTask(CreateTaskRequest request);
 
