@@ -1,6 +1,8 @@
 package com.sergeev.taskmanager.user.internal.service;
 
 import com.sergeev.taskmanager.media.api.MediaApi;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
+import com.sergeev.taskmanager.user.api.UserApi;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.request.*;
 import com.sergeev.taskmanager.user.api.event.AccountDeletionRequestedEvent;
@@ -33,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserApi {
     private final UserMapper userMapper;
     private final UserRepository repository;
     private final ApplicationEventPublisher publisher;
@@ -44,6 +46,7 @@ public class UserService {
     private final AccountDeleteTokenRepository accountDeleteRepository;
     private final MediaApi mediaApi;
     private final RoleRepository roleRepository;
+    private final SecurityFacadeApi securityFacade;
 
     @Transactional
     @CachePut(value = "user", key = "#request.login()")
@@ -125,14 +128,23 @@ public class UserService {
     }
 
     @Cacheable(value = "user", key = "#login")
-    public UserDto get(String login) {
+    public UserDto getUser(String login) {
         User user = repository.findByLogin(login)
-                .orElseThrow();
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+        return userMapper.toDto(user);
+    }
+
+    //@Cacheable(value = "user", key = "#result.login()")
+    public UserDto getMe() {
+        User user = repository.findById(securityFacade.getCurrentUserId())
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
         return userMapper.toDto(user);
     }
 
     // Служебный запрос для поиска, кэш не нужен
-    public UserDto getById(Long id) {
+    public UserDto getUserById(Long id) {
         User user = repository.findById(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
@@ -227,7 +239,8 @@ public class UserService {
 
     @Transactional
     @CachePut(value = "user", key = "#result.login()")
-    public CompletableFuture<UserDto> uploadAvatar(Long userId, MultipartFile file) throws Exception {
+    public CompletableFuture<UserDto> uploadAvatar(MultipartFile file) throws Exception {
+        Long userId = securityFacade.getCurrentUserId();
         User user = repository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 
@@ -254,7 +267,8 @@ public class UserService {
 
     @Transactional
     @CachePut(value = "user", key = "#result.login()")
-    public UserDto deleteAvatar(Long userId) {
+    public UserDto deleteAvatar() {
+        Long userId = securityFacade.getCurrentUserId();
         User user = repository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 

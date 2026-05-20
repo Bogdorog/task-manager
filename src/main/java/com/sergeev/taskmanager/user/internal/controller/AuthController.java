@@ -40,7 +40,7 @@ public class AuthController {
             description = "Ошибка на сервере."
     )
     public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest request) {
-        UserDto user = userApi.registerUser(request);
+        UserDto user = userApi.register(request);
         URI location= ServletUriComponentsBuilder.fromUriString("http://localhost:54455/api/user").path("/{login}").buildAndExpand(user.login()).toUri();
         return ResponseEntity.created(location).body("Пользователь успешно зарегистрирован.");
     }

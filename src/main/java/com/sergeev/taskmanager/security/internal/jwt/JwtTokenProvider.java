@@ -3,6 +3,7 @@ package com.sergeev.taskmanager.security.internal.jwt;
 import com.sergeev.taskmanager.exception.InvalidRefreshTokenException;
 import com.sergeev.taskmanager.security.internal.jwt.entity.RefreshToken;
 import com.sergeev.taskmanager.security.internal.jwt.repository.RefreshTokenRepository;
+import com.sergeev.taskmanager.user.api.CustomUserDetailsService;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ import java.util.UUID;
 public class JwtTokenProvider {
 
     private final SecretKey jwtSecretKey;
-
+    private final CustomUserDetailsService userDetailsService;
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${security.jwt.tokenExpirationTime}")
@@ -43,6 +44,7 @@ public class JwtTokenProvider {
                 .claim("roles", userDetails.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .toList())
+                .claim("id", userDetailsService.getId(userDetails))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(jwtSecretKey, Jwts.SIG.HS512)

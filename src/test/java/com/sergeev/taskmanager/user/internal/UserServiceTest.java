@@ -264,7 +264,7 @@ class UserServiceTest {
                         activeUser.getRole().getName(),
                         null));
 
-        UserDto dto = userService.get("login");
+        UserDto dto = userService.getUser("login");
 
         Assertions.assertNotNull(dto);
     }

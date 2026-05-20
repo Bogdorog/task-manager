@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface UserApi {
 
-    UserDto registerUser(RegisterUserRequest request);
+    UserDto register(RegisterUserRequest request);
 
     UserDto login(LoginRequest request);
 
@@ -22,11 +22,13 @@ public interface UserApi {
 
     UserDto getUserById(Long id);
 
+    UserDto getMe();
+
     String getRole(String login);
 
     String getRole(Long id);
 
-    CompletableFuture<UserDto> uploadAvatar(Long userId, MultipartFile file) throws Exception;
+    CompletableFuture<UserDto> uploadAvatar(MultipartFile file) throws Exception;
 
-    UserDto deleteAvatar(Long userId);
+    UserDto deleteAvatar();
 }
