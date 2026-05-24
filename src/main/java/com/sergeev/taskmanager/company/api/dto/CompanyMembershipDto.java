@@ -1,11 +1,12 @@
 package com.sergeev.taskmanager.company.api.dto;
 
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
+
 import java.time.LocalDateTime;
 
 public record CompanyMembershipDto(
         Long id,
-        Long userId,
-        Long companyId,
-        String role,
+        UserShortDto user,
+        CompanyRoleDto role,
         LocalDateTime joinedAt
 ) {}

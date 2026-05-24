@@ -13,6 +13,7 @@ import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepo
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRoleRepository;
 import com.sergeev.taskmanager.exception.BusinessRuleException;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.user.api.UserApi;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,7 @@ public class CompanyService {
     private final CheckPermissionService permissionService;
     private final UserApi userApi;
     private final CompanyMapper mapper;
+    private final SecurityFacadeApi securityFacade;
 
     // Создать компанию
     public CompanyDto createCompany(Long userId, CreateCompanyRequest request) {
@@ -67,7 +70,7 @@ public class CompanyService {
 
         membershipRepository.save(membership);
 
-        return mapper.toResponse(company);
+        return mapper.toDto(company);
     }
 
     @Transactional(readOnly = true)
@@ -76,7 +79,18 @@ public class CompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Компания не найдена"));
 
-        return mapper.toResponse(company);
+        return mapper.toDto(company);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompanyDto> getMyCompanies(Long userId) {
+
+        return membershipRepository
+                .findAllByUserId(userId)
+                .stream()
+                .map(CompanyMembership::getCompany)
+                .map(mapper::toDto)
+                .toList();
     }
 
     public CompanyDto updateCompany(Long companyId, Long userId, CreateCompanyRequest request) {
@@ -97,15 +111,16 @@ public class CompanyService {
         company.setAddress(request.address());
         company.setUpdatedAt(LocalDateTime.now());
 
-        return mapper.toResponse(company);
+        return mapper.toDto(company);
     }
 
     public void deleteCompany(DeleteCompanyRequest request) {
+        Long actorId = securityFacade.getCurrentUserId();
         Company company = companyRepository.findById(request.companyId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Компания не найдена"));
 
         if (permissionService.isCompanyOwner(
-                request.actorId(), request.companyId())) {
+                actorId, request.companyId())) {
             companyRepository.delete(company);
         } else throw new AccessDeniedException(
                 "Недостаточно прав"
@@ -114,12 +129,13 @@ public class CompanyService {
 
     @Transactional
     public void transferOwnership(TransferOwnershipRequest request) throws BusinessRuleException {
+        Long currentOwnerId = securityFacade.getCurrentUserId();
         if (permissionService.isCompanyOwner(
-                request.currentOwnerId(), request.companyId())) {
+                currentOwnerId, request.companyId())) {
             CompanyMembership currentOwner =
                     membershipRepository
                             .findByUserIdAndCompanyId(
-                                    request.currentOwnerId(),
+                                    currentOwnerId,
                                     request.companyId())
                             .orElseThrow(() ->
                                     new EntityNotFoundException(

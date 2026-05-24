@@ -2,6 +2,7 @@ package com.sergeev.taskmanager.task.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.dto.*;
 import com.sergeev.taskmanager.task.internal.entity.Board;
 import com.sergeev.taskmanager.task.internal.entity.BoardColumn;
@@ -10,15 +11,16 @@ import com.sergeev.taskmanager.task.internal.entity.TaskComment;
 import com.sergeev.taskmanager.task.internal.mapper.TaskCommentMapper;
 import com.sergeev.taskmanager.task.internal.mapper.TaskMapper;
 import com.sergeev.taskmanager.task.internal.repository.*;
+import com.sergeev.taskmanager.user.api.UserApi;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -32,185 +34,103 @@ public class TaskQueryService {
     private final TaskHistoryRepository historyRepository;
     private final BoardRepository boardRepository;
     private final BoardColumnRepository columnRepository;
-
+    private final UserApi userApi;
     private final TaskMapper taskMapper;
     private final TaskCommentMapper commentMapper;
-
+    private final SecurityFacadeApi securityFacadeApi;
     private final CheckPermissionApi permissionApi;
 
     // =========================
-    // TASKS
+    // TASKS — SINGLE
     // =========================
 
-    public TaskDto getTask(Long actorId, Long taskId) {
-
+    public TaskDto getTask(Long taskId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Задача не найдена"
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        TaskDto dto = taskMapper.toDto(task);
-
-        permissionApi.checkCanViewTask(actorId, dto);
-
-        return dto;
+        TaskDto base = taskMapper.toDto(task);
+        return enrichTaskWithUsers(task, base);
     }
 
     public TaskDto getTaskById(Long taskId) {
-
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Задача не найдена"
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        return taskMapper.toDto(task);
+        TaskDto base = taskMapper.toDto(task);
+        return enrichTaskWithUsers(task, base);
     }
 
-    public List<TaskDto> getCompanyTasks(
-            Long actorId,
-            Long companyId
-    ) {
+    // =========================
+    // TASKS — LISTS (пакетное обогащение)
+    // =========================
 
-        permissionApi.checkCompanyPermission(
-                actorId,
-                companyId,
-                PermissionEnum.VIEW_TASK.name()
-        );
+    public List<TaskDto> getCompanyTasks(Long companyId) {
+        permissionApi.checkCompanyPermission(securityFacadeApi.getCurrentUserId(), companyId, PermissionEnum.VIEW_TASK.name());
 
-        return taskRepository.findAllByCompanyId(companyId)
-                .stream()
-                .sorted(
-                        Comparator
-                                .comparing(Task::getUpdatedAt,
-                                        Comparator.nullsLast(Comparator.reverseOrder()))
-                                .thenComparing(
-                                        Task::getCreatedAt,
-                                        Comparator.reverseOrder()
-                                )
-                )
-                .map(taskMapper::toDto)
-                .toList();
+        List<Task> tasks = taskRepository.findAllByCompanyId(companyId);
+        return enrichTasksWithUsers(tasks);
     }
 
-    public List<TaskDto> getMyTasks(
-            Long actorId,
-            Long companyId
-    ) {
+    public List<TaskDto> getMyTasks(Long companyId) {
+        Long actorId = securityFacadeApi.getCurrentUserId();
+        permissionApi.checkCompanyPermission(actorId, companyId, PermissionEnum.VIEW_TASK.name());
 
-        permissionApi.checkCompanyPermission(
-                actorId,
-                companyId,
-                PermissionEnum.VIEW_TASK.name()
-        );
-
-        return taskRepository
-                .findAllByCompanyIdAndAssignedTo(companyId, actorId)
-                .stream()
-                .sorted(
-                        Comparator
-                                .comparing(Task::getUpdatedAt,
-                                        Comparator.nullsLast(Comparator.reverseOrder()))
-                                .thenComparing(
-                                        Task::getCreatedAt,
-                                        Comparator.reverseOrder()
-                                )
-                )
-                .map(taskMapper::toDto)
-                .toList();
+        List<Task> tasks = taskRepository.findAllByCompanyIdAndAssignedTo(companyId, actorId);
+        return enrichTasksWithUsers(tasks);
     }
 
-    public List<TaskDto> getCreatedTasks(
-            Long actorId,
-            Long companyId
-    ) {
+    public List<TaskDto> getCreatedTasks(Long companyId) {
+        Long actorId = securityFacadeApi.getCurrentUserId();
+        permissionApi.checkCompanyPermission(actorId, companyId, PermissionEnum.VIEW_TASK.name());
 
-        permissionApi.checkCompanyPermission(
-                actorId,
-                companyId,
-                PermissionEnum.VIEW_TASK.name()
-        );
-
-        return taskRepository
-                .findAllByCompanyIdAndCreatedBy(companyId, actorId)
-                .stream()
-                .sorted(
-                        Comparator
-                                .comparing(Task::getUpdatedAt,
-                                        Comparator.nullsLast(Comparator.reverseOrder()))
-                                .thenComparing(
-                                        Task::getCreatedAt,
-                                        Comparator.reverseOrder()
-                                )
-                )
-                .map(taskMapper::toDto)
-                .toList();
+        List<Task> tasks = taskRepository.findAllByCompanyIdAndCreatedBy(companyId, actorId);
+        return enrichTasksWithUsers(tasks);
     }
 
-    public List<TaskDto> getColumnTasks(
-            Long actorId,
-            Long columnId
-    ) {
-
+    public List<TaskDto> getColumnTasks(Long columnId) {
         BoardColumn column = columnRepository.findById(columnId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Колонка не найдена"
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Колонка не найдена"));
 
         permissionApi.checkCompanyPermission(
-                actorId,
+                securityFacadeApi.getCurrentUserId(),
                 column.getBoard().getCompanyId(),
                 PermissionEnum.VIEW_TASK.name()
         );
 
-        return taskRepository.findAllByColumnId(columnId)
-                .stream()
-                .sorted(
-                        Comparator
-                                .comparing(Task::getUpdatedAt,
-                                        Comparator.nullsLast(Comparator.reverseOrder()))
-                                .thenComparing(
-                                        Task::getCreatedAt,
-                                        Comparator.reverseOrder()
-                                )
-                )
-                .map(taskMapper::toDto)
-                .toList();
+        List<Task> tasks = taskRepository.findAllByColumnId(columnId);
+        return enrichTasksWithUsers(tasks);
     }
 
     // =========================
-    // COMMENTS
+    // COMMENTS — с обогащением пользователя
     // =========================
 
-    public List<TaskCommentDto> getTaskComments(
-            Long actorId,
-            Long taskId
-    ) {
-
+    public List<TaskCommentDto> getTaskComments(Long taskId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Задача не найдена"
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        permissionApi.checkCanViewTask(actorId, taskMapper.toDto(task));
+        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task)));
 
-        return commentRepository.findAllByTaskId(taskId)
-                .stream()
-                .sorted(
-                        Comparator.comparing(TaskComment::getCreatedAt)
-                )
-                .map(commentMapper::toDto)
+        List<TaskComment> comments = commentRepository.findAllByTaskId(taskId);
+
+        // Пакетная загрузка авторов комментариев
+        Set<Long> userIds = comments.stream()
+                .map(TaskComment::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserShortDto> usersMap = userApi.getUsersByIds(userIds);
+
+        return comments.stream()
+                .sorted(Comparator.comparing(TaskComment::getCreatedAt))
+                .map(comment -> {
+                    TaskCommentDto base = commentMapper.toDto(comment);
+                    UserShortDto user = comment.getUserId() != null ? usersMap.get(comment.getUserId()) : null;
+                    return new TaskCommentDto(
+                            base.id(), base.taskId(), user,
+                            base.commentText(), base.createdAt()
+                    );
+                })
                 .toList();
     }
 
@@ -218,20 +138,11 @@ public class TaskQueryService {
     // HISTORY
     // =========================
 
-    public List<?> getTaskHistory(
-            Long actorId,
-            Long taskId
-    ) {
-
+    public List<?> getTaskHistory(Long taskId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Задача не найдена"
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        permissionApi.checkCanViewTask(actorId, taskMapper.toDto(task));
+        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task)));
 
         return historyRepository.findAllByTaskIdOrderByChangedAtDesc(taskId);
     }
@@ -240,16 +151,8 @@ public class TaskQueryService {
     // BOARDS
     // =========================
 
-    public List<BoardDto> getBoards(
-            Long actorId,
-            Long companyId
-    ) {
-
-        permissionApi.checkCompanyPermission(
-                actorId,
-                companyId,
-                PermissionEnum.VIEW_TASK.name()
-        );
+    public List<BoardDto> getBoards( Long companyId) {
+        permissionApi.checkCompanyPermission(securityFacadeApi.getCurrentUserId(), companyId, PermissionEnum.VIEW_TASK.name());
 
         return boardRepository.findAllByCompanyId(companyId)
                 .stream()
@@ -257,21 +160,12 @@ public class TaskQueryService {
                 .toList();
     }
 
-    public BoardDto getBoard(
-            Long actorId,
-            Long boardId
-    ) {
-
+    public BoardDto getBoard(Long boardId) {
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                NOT_FOUND,
-                                "Доска не найдена"
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Доска не найдена"));
 
         permissionApi.checkCompanyPermission(
-                actorId,
+                securityFacadeApi.getCurrentUserId(),
                 board.getCompanyId(),
                 PermissionEnum.VIEW_TASK.name()
         );
@@ -280,27 +174,101 @@ public class TaskQueryService {
     }
 
     // =========================
-    // PRIVATE
+    // PRIVATE HELPERS
     // =========================
 
-    private BoardDto mapBoard(Board board) {
+    /**
+     * Пакетное обогащение списка задач данными пользователей.
+     * Избегает N+1: один запрос за всеми пользователями.
+     */
+    private List<TaskDto> enrichTasksWithUsers(List<Task> tasks) {
+        if (tasks.isEmpty()) return List.of();
 
+        // Собираем все уникальные ID пользователей
+        Set<Long> userIds = tasks.stream()
+                .flatMap(t -> Stream.of(t.getAssignedTo(), t.getCreatedBy()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // Один запрос за всеми пользователями
+        Map<Long, UserShortDto> usersMap = userApi.getUsersByIds(userIds);
+
+        // Маппинг + обогащение
+        return tasks.stream()
+                .sorted(Comparator
+                        .comparing(Task::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(Task::getCreatedAt, Comparator.reverseOrder()))
+                .map(task -> {
+                    TaskDto base = taskMapper.toDto(task);
+                    return enrichTaskWithUsers(task, base, usersMap);
+                })
+                .toList();
+    }
+
+    /**
+     * Обогащение одной задачи (использует пакетный маппинг, если передан usersMap).
+     */
+    private TaskDto enrichTaskWithUsers(Task task, TaskDto base) {
+        // Для одиночной задачи — два отдельных запроса (это ок)
+        UserShortDto assignedTo = task.getAssignedTo() != null
+                ? userApi.getShortUserById(task.getAssignedTo())
+                : null;
+        UserShortDto createdBy = task.getCreatedBy() != null
+                ? userApi.getShortUserById(task.getCreatedBy())
+                : null;
+
+        return new TaskDto(
+                base.id(), base.title(), base.description(), base.status(),
+                base.priority(), assignedTo, createdBy, base.companyId(),
+                base.columnId(), base.dueDate(), base.createdAt(), base.updatedAt()
+        );
+    }
+
+    /**
+     * Перегрузка для пакетного обогащения (используется внутри enrichTasksWithUsers).
+     */
+    private TaskDto enrichTaskWithUsers(Task task, TaskDto base, Map<Long, UserShortDto> usersMap) {
+        return new TaskDto(
+                base.id(), base.title(), base.description(), base.status(),
+                base.priority(),
+                task.getAssignedTo() != null ? usersMap.get(task.getAssignedTo()) : null,
+                task.getCreatedBy() != null ? usersMap.get(task.getCreatedBy()) : null,
+                base.companyId(), base.columnId(), base.dueDate(),
+                base.createdAt(), base.updatedAt()
+        );
+    }
+
+    /**
+     * Маппинг доски с обогащением задач.
+     */
+    private BoardDto mapBoard(Board board) {
         List<BoardColumn> columns = columnRepository
                 .findAllByBoardIdOrderByPositionAsc(board.getId());
 
-        Map<Long, List<TaskShortDto>> groupedTasks = taskRepository
-                .findAllByBoardId(board.getId())
-                .stream()
-                .sorted(
-                        Comparator
-                                .comparing(Task::getUpdatedAt,
-                                        Comparator.nullsLast(Comparator.reverseOrder()))
-                                .thenComparing(
-                                        Task::getCreatedAt,
-                                        Comparator.reverseOrder()
-                                )
-                )
-                .map(taskMapper::toShortDto)
+        List<Task> tasks = taskRepository.findAllByBoardId(board.getId());
+
+        // Пакетное обогащение задач
+        Set<Long> userIds = tasks.stream()
+                .flatMap(t -> Stream.of(t.getAssignedTo(), t.getCreatedBy()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, UserShortDto> usersMap = userApi.getUsersByIds(userIds);
+
+        // Группировка задач по колонкам с обогащением
+        Map<Long, List<TaskShortDto>> groupedTasks = tasks.stream()
+                .sorted(Comparator
+                        .comparing(Task::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(Task::getCreatedAt, Comparator.reverseOrder()))
+                .map(task -> {
+                    TaskShortDto base = taskMapper.toShortDto(task);
+                    UserShortDto assignedTo = task.getAssignedTo() != null
+                            ? usersMap.get(task.getAssignedTo())
+                            : null;
+                    return new TaskShortDto(
+                            base.id(), base.title(), base.priority(),
+                            base.status(), assignedTo, base.columnId()
+                    );
+                })
                 .collect(Collectors.groupingBy(TaskShortDto::columnId));
 
         List<BoardColumnDto> columnDtos = columns.stream()

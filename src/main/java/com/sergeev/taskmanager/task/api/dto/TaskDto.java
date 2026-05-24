@@ -1,5 +1,7 @@
 package com.sergeev.taskmanager.task.api.dto;
 
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
+
 import java.time.LocalDateTime;
 
 public record TaskDto(
@@ -8,8 +10,8 @@ public record TaskDto(
         String description,
         String status,
         String priority,
-        Long assignedTo,
-        Long createdBy,
+        UserShortDto assignedTo,
+        UserShortDto createdBy,
         Long companyId,
         Long columnId,
         LocalDateTime dueDate,

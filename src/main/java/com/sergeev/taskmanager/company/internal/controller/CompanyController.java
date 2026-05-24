@@ -2,8 +2,8 @@ package com.sergeev.taskmanager.company.internal.controller;
 
 import com.sergeev.taskmanager.company.api.dto.CompanyDto;
 import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
+import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
 import com.sergeev.taskmanager.company.api.dto.request.*;
-import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
 import com.sergeev.taskmanager.company.internal.service.CompanyMembershipService;
 import com.sergeev.taskmanager.company.internal.service.CompanyRoleService;
 import com.sergeev.taskmanager.company.internal.service.CompanyService;
@@ -40,6 +40,14 @@ public class CompanyController {
         return service.getCompany(companyId);
     }
 
+    @GetMapping("/my")
+    public List<CompanyDto> getMyCompanies() {
+
+        return service.getMyCompanies(
+                security.getCurrentUserId()
+        );
+    }
+
     // UPDATE COMPANY
     @PutMapping("/{companyId}")
     public CompanyDto update(
@@ -62,9 +70,15 @@ public class CompanyController {
     // INVITE USER
     @PostMapping("/{companyId}/members")
     public void inviteUser(
+            @PathVariable Long companyId,
             @RequestBody InviteUserRequest request
     ) throws BusinessRuleException {
-        membershipService.inviteUser(request);
+        InviteUserRequest updatedRequest =
+                new InviteUserRequest(
+                        companyId,
+                        request.userId(),
+                        request.roleId());
+        membershipService.inviteUser(updatedRequest);
     }
 
     // GET MEMBERS
@@ -78,19 +92,27 @@ public class CompanyController {
 
     // REMOVE USER
     @DeleteMapping("/{companyId}/members/{membershipId}")
-    public void removeUser(@RequestBody DeleteMemberRequest request) throws BusinessRuleException {
+    public void removeUser(@PathVariable Long companyId,
+                           @PathVariable Long membershipId) throws BusinessRuleException {
+        DeleteMemberRequest request =
+                new DeleteMemberRequest(
+                        companyId,
+                        membershipId);
         membershipService.removeUser(request);
     }
 
     // LEAVE COMPANY
     @DeleteMapping("/{companyId}/leave")
-    public void leave(@RequestBody LeaveCompanyRequest request) throws BusinessRuleException {
+    public void leave(@PathVariable Long companyId) throws BusinessRuleException {
+        LeaveCompanyRequest request =
+                new LeaveCompanyRequest(
+                        companyId);
         membershipService.leaveCompany(request);
     }
 
     // GET ROLES
     @GetMapping("/{companyId}/roles")
-    public List<CompanyRole> getRoles(@PathVariable Long companyId) {
+    public List<CompanyRoleDto> getRoles(@PathVariable Long companyId) {
         return roleService.getRoles(
                 companyId,
                 security.getCurrentUserId()
@@ -114,8 +136,12 @@ public class CompanyController {
     @DeleteMapping("/{companyId}/roles/{roleId}")
     public void deleteRole(
             @PathVariable Long companyId,
-            @RequestBody DeleteRoleRequest request
+            @PathVariable Long roleId
     ) {
+        DeleteRoleRequest request =
+                new DeleteRoleRequest(
+                        companyId,
+                        roleId);
         roleService.deleteRole(request);
     }
 
@@ -128,7 +154,12 @@ public class CompanyController {
             @PathVariable Long membershipId,
             @RequestBody AssignRoleRequest request
     ) {
-        roleService.assignRole(request);
+        AssignRoleRequest updatedRequest =
+                new AssignRoleRequest(
+                        companyId,
+                        membershipId,
+                        request.roleId());
+        roleService.assignRole(updatedRequest);
     }
 
     // =========================
@@ -137,8 +168,14 @@ public class CompanyController {
     @PutMapping("/{companyId}/transfer-owner/{userId}")
     public void transferOwner(
             @PathVariable Long companyId,
+            @PathVariable Long userId,
             @RequestBody TransferOwnershipRequest request
     ) throws BusinessRuleException {
-        service.transferOwnership(request);
+        TransferOwnershipRequest updatedRequest =
+                new TransferOwnershipRequest(
+                        companyId,
+                        userId,
+                        request.newOwnerRoleId());
+        service.transferOwnership(updatedRequest);
     }
 }

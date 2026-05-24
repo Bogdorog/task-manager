@@ -2,6 +2,7 @@ package com.sergeev.taskmanager.task.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.dto.BoardColumnDto;
 import com.sergeev.taskmanager.task.api.dto.BoardDto;
 import com.sergeev.taskmanager.task.api.dto.request.*;
@@ -35,20 +36,18 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final BoardColumnRepository columnRepository;
     private final TaskRepository taskRepository;
-
     private final CheckPermissionApi permissionApi;
-
     private final BoardMapper boardMapper;
     private final BoardColumnMapper columnMapper;
+    private final SecurityFacadeApi securityFacade;
 
     // =========================================================
     // BOARD
     // =========================================================
 
     public BoardDto createBoard(CreateBoardRequest request) {
-
         permissionApi.checkCompanyPermission(
-                request.actorId(),
+                securityFacade.getCurrentUserId(),
                 request.companyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -67,15 +66,11 @@ public class BoardService {
         return boardMapper.toDto(board);
     }
 
-    public BoardDto updateBoard(
-            Long boardId,
-            UpdateBoardRequest request
-    ) {
-
+    public BoardDto updateBoard(Long boardId, UpdateBoardRequest request) {
         Board board = getBoard(boardId);
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
+                securityFacade.getCurrentUserId(),
                 board.getCompanyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -87,14 +82,12 @@ public class BoardService {
     }
 
     public void deleteBoard(
-            Long boardId,
-            Long actorId
-    ) {
+            Long boardId) {
 
         Board board = getBoard(boardId);
 
         permissionApi.checkCompanyPermission(
-                actorId,
+                securityFacade.getCurrentUserId(),
                 board.getCompanyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -106,14 +99,12 @@ public class BoardService {
     // COLUMN
     // =========================================================
 
-    public BoardColumnDto createColumn(
-            CreateColumnRequest request
-    ) {
-
+    public BoardColumnDto createColumn(CreateColumnRequest request) {
+        Long actorId = securityFacade.getCurrentUserId();
         Board board = getBoard(request.boardId());
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
+                actorId,
                 board.getCompanyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -136,16 +127,11 @@ public class BoardService {
         return columnMapper.toDto(column);
     }
 
-    public BoardColumnDto updateColumn(
-            Long columnId,
-            Long actorId,
-            String name
-    ) {
-
+    public BoardColumnDto updateColumn(Long columnId, String name) {
         BoardColumn column = getColumn(columnId);
 
         permissionApi.checkCompanyPermission(
-                actorId,
+                securityFacade.getCurrentUserId(),
                 column.getBoard().getCompanyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -156,11 +142,10 @@ public class BoardService {
     }
 
     public void moveColumn(MoveColumnRequest request) {
-
         BoardColumn column = getColumn(request.columnId());
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
+                securityFacade.getCurrentUserId(),
                 column.getBoard().getCompanyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -184,15 +169,12 @@ public class BoardService {
         recalculateColumnPositions(columns);
     }
 
-    public void deleteColumn(
-            Long columnId,
-            Long actorId
-    ) {
+    public void deleteColumn(Long columnId) {
 
         BoardColumn column = getColumn(columnId);
 
         permissionApi.checkCompanyPermission(
-                actorId,
+                securityFacade.getCurrentUserId(),
                 column.getBoard().getCompanyId(),
                 PermissionEnum.MANAGE_BOARDS.name()
         );
@@ -222,7 +204,6 @@ public class BoardService {
     // =========================================================
 
     public void moveTask(MoveTaskRequest request) {
-
         Task task = taskRepository.findById(
                 request.taskId()
         ).orElseThrow(() ->
@@ -240,8 +221,8 @@ public class BoardService {
         );
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
-                task.getCompanyId(),
+                securityFacade.getCurrentUserId(),
+                taskRepository.findCompanyIdByTaskId(request.taskId()),
                 PermissionEnum.UPDATE_TASK.name()
         );
 

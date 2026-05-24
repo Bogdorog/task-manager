@@ -40,7 +40,6 @@ public class TaskController {
 
         UpdateTaskRequest updatedRequest = new UpdateTaskRequest(
                 taskId,
-                request.actorId(),
                 request.title(),
                 request.description(),
                 request.priority(),
@@ -59,9 +58,7 @@ public class TaskController {
         AssignTaskRequest updatedRequest =
                 new AssignTaskRequest(
                         taskId,
-                        request.actorId(),
-                        request.assignedUserId()
-                );
+                        request.assignedUserId());
 
         return commandService.assignTask(updatedRequest);
     }
@@ -75,7 +72,6 @@ public class TaskController {
         ChangeTaskStatusRequest updatedRequest =
                 new ChangeTaskStatusRequest(
                         taskId,
-                        request.actorId(),
                         request.status()
                 );
 
@@ -84,15 +80,11 @@ public class TaskController {
 
     @DeleteMapping("/{taskId}")
     public void deleteTask(
-            @PathVariable Long taskId,
-            @RequestBody DeleteTaskRequest request
+            @PathVariable Long taskId
     ) {
 
         DeleteTaskRequest updatedRequest =
-                new DeleteTaskRequest(
-                        taskId,
-                        request.actorId()
-                );
+                new DeleteTaskRequest(taskId);
 
         commandService.deleteTask(updatedRequest);
     }
@@ -110,23 +102,18 @@ public class TaskController {
         AddCommentRequest updatedRequest =
                 new AddCommentRequest(
                         taskId,
-                        request.actorId(),
-                        request.text()
-                );
+                        request.text());
 
         return commandService.addComment(updatedRequest);
     }
 
     @DeleteMapping("/{taskId}/comments/{commentId}")
     public void deleteComment(
-            @PathVariable Long taskId,
-            @PathVariable Long commentId,
-            @RequestBody DeleteCommentRequest request
+            @PathVariable Long commentId
     ) {
 
         DeleteCommentRequest updatedRequest =
                 new DeleteCommentRequest(
-                        request.actorId(),
                         commentId
                 );
 
@@ -139,76 +126,51 @@ public class TaskController {
 
     @GetMapping("/{taskId}")
     public TaskDto getTask(
-            @PathVariable Long taskId,
-            @RequestParam Long actorId
+            @PathVariable Long taskId
     ) {
-        return queryService.getTask(actorId, taskId);
+        return queryService.getTask(taskId);
     }
 
     @GetMapping("/company/{companyId}")
     public List<TaskDto> getCompanyTasks(
-            @PathVariable Long companyId,
-            @RequestParam Long actorId
+            @PathVariable Long companyId
     ) {
-        return queryService.getCompanyTasks(
-                actorId,
-                companyId
-        );
+        return queryService.getCompanyTasks(companyId);
     }
 
     @GetMapping("/company/{companyId}/my")
     public List<TaskDto> getMyTasks(
-            @PathVariable Long companyId,
-            @RequestParam Long actorId
+            @PathVariable Long companyId
     ) {
-        return queryService.getMyTasks(
-                actorId,
-                companyId
-        );
+        return queryService.getMyTasks(companyId);
     }
 
     @GetMapping("/company/{companyId}/created")
     public List<TaskDto> getCreatedTasks(
-            @PathVariable Long companyId,
-            @RequestParam Long actorId
+            @PathVariable Long companyId
     ) {
-        return queryService.getCreatedTasks(
-                actorId,
-                companyId
-        );
+        return queryService.getCreatedTasks(companyId);
     }
 
     @GetMapping("/columns/{columnId}")
     public List<TaskDto> getColumnTasks(
-            @PathVariable Long columnId,
-            @RequestParam Long actorId
+            @PathVariable Long columnId
     ) {
-        return queryService.getColumnTasks(
-                actorId,
-                columnId
-        );
+        return queryService.getColumnTasks(columnId);
     }
 
     @GetMapping("/{taskId}/comments")
     public List<TaskCommentDto> getComments(
-            @PathVariable Long taskId,
-            @RequestParam Long actorId
+            @PathVariable Long taskId
     ) {
-        return queryService.getTaskComments(
-                actorId,
-                taskId
-        );
+        return queryService.getTaskComments(taskId);
     }
 
     @GetMapping("/{taskId}/history")
     public List<?> getTaskHistory(
-            @PathVariable Long taskId,
-            @RequestParam Long actorId
+            @PathVariable Long taskId
     ) {
-        return queryService.getTaskHistory(
-                actorId,
-                taskId
-        );
+        return queryService.getTaskHistory(taskId);
     }
 
     // =========================================================
@@ -231,7 +193,6 @@ public class TaskController {
         UpdateBoardRequest updatedRequest =
                 new UpdateBoardRequest(
                         boardId,
-                        request.actorId(),
                         request.name(),
                         request.description()
                 );
@@ -241,35 +202,23 @@ public class TaskController {
 
     @DeleteMapping("/boards/{boardId}")
     public void deleteBoard(
-            @PathVariable Long boardId,
-            @RequestParam Long actorId
+            @PathVariable Long boardId
     ) {
-        boardService.deleteBoard(
-                boardId,
-                actorId
-        );
+        boardService.deleteBoard(boardId);
     }
 
     @GetMapping("/boards/company/{companyId}")
     public List<BoardDto> getBoards(
-            @PathVariable Long companyId,
-            @RequestParam Long actorId
+            @PathVariable Long companyId
     ) {
-        return queryService.getBoards(
-                actorId,
-                companyId
-        );
+        return queryService.getBoards(companyId);
     }
 
     @GetMapping("/boards/{boardId}")
     public BoardDto getBoard(
-            @PathVariable Long boardId,
-            @RequestParam Long actorId
+            @PathVariable Long boardId
     ) {
-        return queryService.getBoard(
-                actorId,
-                boardId
-        );
+        return queryService.getBoard(boardId);
     }
 
     // =========================================================
@@ -285,7 +234,6 @@ public class TaskController {
         CreateColumnRequest updatedRequest =
                 new CreateColumnRequest(
                         boardId,
-                        request.actorId(),
                         request.name()
                 );
 
@@ -303,7 +251,6 @@ public class TaskController {
                 new MoveColumnRequest(
                         boardId,
                         columnId,
-                        request.actorId(),
                         request.newIndex()
                 );
 
@@ -313,13 +260,9 @@ public class TaskController {
     @DeleteMapping("/boards/{boardId}/columns/{columnId}")
     public void deleteColumn(
             @PathVariable Long boardId,
-            @PathVariable Long columnId,
-            @RequestParam Long actorId
+            @PathVariable Long columnId
     ) {
-        boardService.deleteColumn(
-                columnId,
-                actorId
-        );
+        boardService.deleteColumn(columnId);
     }
 
     // =========================================================
@@ -334,7 +277,6 @@ public class TaskController {
 
         MoveTaskRequest updatedRequest =
                 new MoveTaskRequest(
-                        request.actorId(),
                         taskId,
                         request.targetColumnId(),
                         request.newPosition()

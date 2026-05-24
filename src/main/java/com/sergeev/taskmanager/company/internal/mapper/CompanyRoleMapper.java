@@ -1,19 +1,18 @@
 package com.sergeev.taskmanager.company.internal.mapper;
 
-import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
-import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
+import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
+import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
 import com.sergeev.taskmanager.company.internal.entity.Permission;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
-public interface CompanyMembershipMapper {
-    @Mapping(target = "user", ignore = true)
-    CompanyMembershipDto toDto (CompanyMembership membership);
+public interface CompanyRoleMapper {
+
+    CompanyRoleDto toDto(CompanyRole role);
 
     // Вспомогательные методы для конвертации прав
     default PermissionEnum mapPermission(Permission permission) {

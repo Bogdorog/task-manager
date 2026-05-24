@@ -1,9 +1,12 @@
 package com.sergeev.taskmanager.user.api;
 
 import com.sergeev.taskmanager.user.api.dto.UserDto;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import com.sergeev.taskmanager.user.api.dto.request.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public interface UserApi {
@@ -21,6 +24,10 @@ public interface UserApi {
     UserDto getUser(String login);
 
     UserDto getUserById(Long id);
+
+    UserShortDto getShortUserById(Long id);
+
+    Map<Long, UserShortDto> getUsersByIds(Collection<Long> ids);
 
     UserDto getMe();
 

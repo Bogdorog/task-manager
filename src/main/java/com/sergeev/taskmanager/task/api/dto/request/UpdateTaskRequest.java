@@ -6,13 +6,9 @@ import java.time.LocalDateTime;
 
 public record UpdateTaskRequest(
 
-        Long actorId,
         Long taskId,
-
         String title,
         String description,
-
         TaskPriority priority,
-
         LocalDateTime dueDate
 ) {}

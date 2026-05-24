@@ -32,6 +32,6 @@ public class CompanyMembership {
     @JoinColumn(name = "role_id")
     private CompanyRole role;
 
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private LocalDateTime joinedAt;
 }

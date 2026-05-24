@@ -13,7 +13,9 @@ import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepo
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRoleRepository;
 import com.sergeev.taskmanager.exception.BusinessRuleException;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.user.api.UserApi;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,6 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 //TODO Переписать получение членства на метод из CheckPermissionService
 
@@ -35,12 +41,13 @@ public class CompanyMembershipService {
     private final CheckPermissionService permissionService;
     private final UserApi userApi;
     private final CompanyMembershipMapper mapper;
+    private final SecurityFacadeApi securityFacade;
 
     public void inviteUser(
             InviteUserRequest request
     ) throws BusinessRuleException {
         permissionService.checkCompanyPermission(
-                request.inviterId(),
+                securityFacade.getCurrentUserId(),
                 request.companyId(),
                 PermissionEnum.INVITE_USER.getTitle()
         );
@@ -104,8 +111,9 @@ public class CompanyMembershipService {
     public void removeUser(
             DeleteMemberRequest request
     ) throws BusinessRuleException {
+        Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
-                request.actorId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.MANAGE_COMPANY.getTitle()
         );
@@ -132,7 +140,7 @@ public class CompanyMembershipService {
             throw new BusinessRuleException("Нельзя удалить Владельца");
         }
         if (membership.getUserId()
-                .equals(request.actorId())) {
+                .equals(actorId)) {
             throw new BusinessRuleException("Нельзя удалить самого себя");
         }
         membershipRepository.delete(membership);
@@ -144,7 +152,7 @@ public class CompanyMembershipService {
         CompanyMembership membership =
                 membershipRepository
                         .findByUserIdAndCompanyId(
-                                request.actorId(),
+                                securityFacade.getCurrentUserId(),
                                 request.companyId()
                         )
                         .orElseThrow(() ->
@@ -161,18 +169,36 @@ public class CompanyMembershipService {
         membershipRepository.delete(membership);
     }
 
+    /**
+     * Получение списка участников компании.
+     */
     @Transactional(readOnly = true)
-    public List<CompanyMembershipDto> getMembers(
-            Long companyId,
-            Long actorId
-    ) {
-        if (permissionService.isCompanyMember(actorId, companyId))
-        {
-            return membershipRepository
-                    .findAllByCompanyId(companyId)
-                    .stream()
-                    .map(mapper::toDto)
-                    .toList();
-        } else throw new AccessDeniedException("Невозможно посмотреть сотрудников чужой компании");
+    public List<CompanyMembershipDto> getMembers(Long companyId, Long actorId) {
+        if (!permissionService.isCompanyMember(actorId, companyId)) {
+            throw new AccessDeniedException("Невозможно посмотреть сотрудников чужой компании");
+        }
+
+        List<CompanyMembership> memberships = membershipRepository.findAllByCompanyId(companyId);
+
+        // Пакетно собираем все userId
+        Set<Long> userIds = memberships.stream()
+                .map(CompanyMembership::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserShortDto> usersMap = userApi.getUsersByIds(userIds);
+
+        // Маппинг + обогащение
+        return memberships.stream()
+                .map(membership -> {
+                    CompanyMembershipDto base = mapper.toDto(membership);
+                    UserShortDto user = membership.getUserId() != null
+                            ? usersMap.get(membership.getUserId())
+                            : null;
+                    return new CompanyMembershipDto(
+                            base.id(), user, base.role(), base.joinedAt()
+                    );
+                })
+                .toList();
     }
 }

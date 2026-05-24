@@ -8,6 +8,8 @@ import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyMembershipMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
+import com.sergeev.taskmanager.user.api.UserApi;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -19,38 +21,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class CheckPermissionService implements CheckPermissionApi {
     private final CompanyMembershipRepository membershipRepository;
     private final CompanyMembershipMapper membershipMapper;
+    private final UserApi userApi;
 
     @Override
     public void checkCompanyPermission(
             Long userId,
             Long companyId,
-            String permission
-    ) {
+            String permission) {
 
-        if (!hasCompanyPermission(
-                userId,
-                companyId,
-                permission
-        )) {
-
-            throw new AccessDeniedException(
-                    "Недостаточно прав"
-            );
+        if (!hasCompanyPermission(userId, companyId, permission)
+                && !isCompanyOwner(userId, companyId)) {
+            throw new AccessDeniedException("Недостаточно прав");
         }
     }
 
-    public void checkCanViewTask(
-            Long userId,
-            TaskDto task
-    ) {
+    public void checkCanViewTask(Long userId, TaskDto task) {
 
         if (!hasCompanyPermission(userId, task.companyId(),
-                PermissionEnum.VIEW_ALL_TASKS.getTitle()) || userId.equals(task.createdBy())
-                || userId.equals(task.assignedTo())) {
-
-            throw new AccessDeniedException(
-                    "Недостаточно прав"
-            );
+                PermissionEnum.VIEW_ALL_TASKS.getTitle())
+                && !userId.equals(task.createdBy().id())
+                && !userId.equals(task.assignedTo().id())
+                && !isCompanyOwner(userId, task.companyId()))
+        {
+            throw new AccessDeniedException("Недостаточно прав");
         }
     }
 
@@ -58,8 +51,7 @@ public class CheckPermissionService implements CheckPermissionApi {
     public boolean hasCompanyPermission(
             Long userId,
             Long companyId,
-            String permission
-    ) {
+            String permission) {
 
         return membershipRepository
                 .findByUserIdAndCompanyId(
@@ -73,57 +65,39 @@ public class CheckPermissionService implements CheckPermissionApi {
                 .orElse(false);
     }
 
-    @Override
-    public CompanyMembershipDto getMembership(
-            Long userId,
-            Long companyId
-    ) {
+    public CompanyMembershipDto getMembership(Long userId, Long companyId) {
+        CompanyMembership membership = membershipRepository
+                .findByUserIdAndCompanyId(userId, companyId)
+                .orElseThrow(() -> new AccessDeniedException("Пользователь не состоит в компании"));
 
-        CompanyMembership membership =
-                membershipRepository
-                        .findByUserIdAndCompanyId(
-                                userId,
-                                companyId
-                        )
-                        .orElseThrow(() ->
-                                new AccessDeniedException(
-                                        "Пользователь не состоит в компании"
-                                )
-                        );
+        CompanyMembershipDto base = membershipMapper.toDto(membership);
 
-        return membershipMapper.toDto(membership);
+        // Обогащение пользователем
+        UserShortDto user = membership.getUserId() != null
+                ? userApi.getShortUserById(membership.getUserId())
+                : null;
+
+        return new CompanyMembershipDto(
+                base.id(), user, base.role(), base.joinedAt()
+        );
     }
 
     @Override
-    public boolean isCompanyMember(
-            Long userId,
-            Long companyId
-    ) {
+    public boolean isCompanyMember(Long userId, Long companyId) {
 
         return membershipRepository
-                .existsByUserIdAndCompanyId(
-                        userId,
-                        companyId
-                );
+                .existsByUserIdAndCompanyId(userId, companyId);
     }
 
     @Override
     public boolean isCompanyOwner(
             Long userId,
-            Long companyId
-    ) {
+            Long companyId) {
 
         return membershipRepository
-                .findByUserIdAndCompanyId(
-                        userId,
-                        companyId
-                )
+                .findByUserIdAndCompanyId(userId, companyId)
                 .map(m ->
-                        Company.OWNER
-                                .equals(
-                                        m.getRole().getName()
-                                )
-                )
+                        Company.OWNER.equals(m.getRole().getName()))
                 .orElse(false);
     }
 }

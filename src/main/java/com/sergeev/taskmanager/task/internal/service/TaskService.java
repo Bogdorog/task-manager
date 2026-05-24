@@ -3,6 +3,7 @@ package com.sergeev.taskmanager.task.internal.service;
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.TaskApi;
 import com.sergeev.taskmanager.task.api.dto.TaskCommentDto;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
@@ -30,17 +31,14 @@ public class TaskService implements TaskApi {
 
     private final TaskRepository taskRepository;
     private final TaskCommentRepository commentRepository;
-
     private final BoardRepository boardRepository;
     private final BoardColumnRepository columnRepository;
-
     private final CompanyMembershipRepository membershipRepository;
-
     private final CheckPermissionApi permissionApi;
     private final TaskHistoryService historyService;
-
     private final TaskMapper taskMapper;
     private final TaskCommentMapper commentMapper;
+    private final SecurityFacadeApi securityFacade;
 
     // =========================================================
     // CREATE TASK
@@ -48,9 +46,9 @@ public class TaskService implements TaskApi {
 
     @Override
     public TaskDto createTask(CreateTaskRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         permissionApi.checkCompanyPermission(
-                request.actorId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.CREATE_TASK.name()
         );
@@ -84,9 +82,8 @@ public class TaskService implements TaskApi {
                 .description(request.description())
                 .priority(request.priority())
                 .status(TaskStatus.OPEN)
-                .companyId(request.companyId())
                 .columnId(column.getId())
-                .createdBy(request.actorId())
+                .createdBy(actorId)
                 .assignedTo(request.assignedUserId())
                 .dueDate(request.dueDate())
                 .createdAt(LocalDateTime.now())
@@ -96,7 +93,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.CREATED,
                 null,
                 task.getTitle()
@@ -104,7 +101,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.STATUS,
                 null,
                 TaskStatus.OPEN.name()
@@ -114,7 +111,7 @@ public class TaskService implements TaskApi {
 
             historyService.record(
                     task,
-                    request.actorId(),
+                    actorId,
                     TaskHistoryField.ASSIGNED_TO,
                     null,
                     request.assignedUserId().toString()
@@ -130,19 +127,19 @@ public class TaskService implements TaskApi {
 
     @Override
     public TaskDto updateTask(UpdateTaskRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
-                task.getCompanyId(),
+                actorId,
+                taskRepository.findCompanyIdByTaskId(request.taskId()),
                 PermissionEnum.UPDATE_TASK.name()
         );
 
-        updateTitle(task, request);
-        updateDescription(task, request);
-        updatePriority(task, request);
-        updateDueDate(task, request);
+        updateTitle(task, actorId, request);
+        updateDescription(task, actorId, request);
+        updatePriority(task, actorId, request);
+        updateDueDate(task, actorId, request);
 
         task.setUpdatedAt(LocalDateTime.now());
 
@@ -155,18 +152,19 @@ public class TaskService implements TaskApi {
 
     @Override
     public TaskDto assignTask(AssignTaskRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
+        Long companyId = taskRepository.findCompanyIdByTaskId(request.taskId());
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
-                task.getCompanyId(),
+                actorId,
+                companyId,
                 PermissionEnum.ASSIGN_TASK.name()
         );
 
         validateMembershipIfAssigned(
                 request.assignedUserId(),
-                task.getCompanyId()
+                companyId
         );
 
         Long oldAssigned = task.getAssignedTo();
@@ -176,7 +174,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.ASSIGNED_TO,
                 oldAssigned == null
                         ? null
@@ -195,11 +193,11 @@ public class TaskService implements TaskApi {
 
     @Override
     public TaskDto changeStatus(ChangeTaskStatusRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
 
         permissionApi.checkCanViewTask(
-                request.actorId(),
+                actorId,
                 taskMapper.toDto(task)
         );
 
@@ -214,7 +212,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.STATUS,
                 oldStatus.name(),
                 request.status().name()
@@ -229,23 +227,23 @@ public class TaskService implements TaskApi {
 
     @Override
     public TaskCommentDto addComment(AddCommentRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
 
         permissionApi.checkCanViewTask(
-                request.actorId(),
+                actorId,
                 taskMapper.toDto(task)
         );
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
-                task.getCompanyId(),
+                actorId,
+                taskRepository.findCompanyIdByTaskId(request.taskId()),
                 PermissionEnum.COMMENT_TASK.name()
         );
 
         TaskComment comment = TaskComment.builder()
                 .taskId(task.getId())
-                .userId(request.actorId())
+                .userId(actorId)
                 .commentText(request.text())
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -254,7 +252,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.COMMENT_ADDED,
                 null,
                 truncateComment(request.text())
@@ -269,7 +267,7 @@ public class TaskService implements TaskApi {
 
     @Override
     public void deleteComment(DeleteCommentRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         TaskComment comment = commentRepository.findById(
                 request.commentId()
         ).orElseThrow(() ->
@@ -284,12 +282,12 @@ public class TaskService implements TaskApi {
         boolean isAuthor =
                 Objects.equals(
                         comment.getUserId(),
-                        request.actorId()
+                        actorId
                 );
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
-                task.getCompanyId(),
+                actorId,
+                taskRepository.findCompanyIdByTaskId(comment.getTaskId()),
                 PermissionEnum.DELETE_COMMENT.name()
         );
 
@@ -304,7 +302,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.COMMENT_DELETED,
                 truncateComment(comment.getCommentText()),
                 null
@@ -317,18 +315,18 @@ public class TaskService implements TaskApi {
 
     @Override
     public void deleteTask(DeleteTaskRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
 
         permissionApi.checkCompanyPermission(
-                request.actorId(),
-                task.getCompanyId(),
+                actorId,
+                taskRepository.findCompanyIdByTaskId(request.taskId()),
                 PermissionEnum.DELETE_TASK.name()
         );
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.DELETED,
                 task.getTitle(),
                 null
@@ -394,9 +392,9 @@ public class TaskService implements TaskApi {
 
     private void updateTitle(
             Task task,
+            Long actorId,
             UpdateTaskRequest request
     ) {
-
         if (Objects.equals(
                 task.getTitle(),
                 request.title()
@@ -406,7 +404,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.TITLE,
                 task.getTitle(),
                 request.title()
@@ -417,9 +415,9 @@ public class TaskService implements TaskApi {
 
     private void updateDescription(
             Task task,
+            Long actorId,
             UpdateTaskRequest request
     ) {
-
         if (Objects.equals(
                 task.getDescription(),
                 request.description()
@@ -429,7 +427,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.DESCRIPTION,
                 task.getDescription(),
                 request.description()
@@ -440,16 +438,16 @@ public class TaskService implements TaskApi {
 
     private void updatePriority(
             Task task,
+            Long actorId,
             UpdateTaskRequest request
     ) {
-
         if (task.getPriority() == request.priority()) {
             return;
         }
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.PRIORITY,
                 task.getPriority().name(),
                 request.priority().name()
@@ -460,6 +458,7 @@ public class TaskService implements TaskApi {
 
     private void updateDueDate(
             Task task,
+            Long actorId,
             UpdateTaskRequest request
     ) {
 
@@ -472,7 +471,7 @@ public class TaskService implements TaskApi {
 
         historyService.record(
                 task,
-                request.actorId(),
+                actorId,
                 TaskHistoryField.DUE_DATE,
                 task.getDueDate() == null
                         ? null

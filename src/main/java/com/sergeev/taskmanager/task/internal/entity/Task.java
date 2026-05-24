@@ -11,9 +11,9 @@ import java.util.List;
 @Table(
         name = "tasks",
         indexes = {
-                @Index(name = "idx_task_company", columnList = "company_id"),
                 @Index(name = "idx_task_assigned", columnList = "assigned_to"),
-                @Index(name = "idx_task_status", columnList = "status")
+                @Index(name = "idx_tasks_column", columnList = "column_id"),
+                @Index(name = "idx_tasks_created_by", columnList = "created_by")
         }
 )
 @Getter
@@ -46,9 +46,6 @@ public class Task {
 
     @Column(name = "created_by")
     private Long createdBy;
-
-    @Column(name = "company_id")
-    private Long companyId;
 
     @Column(name = "board_id")
     private Long boardId;

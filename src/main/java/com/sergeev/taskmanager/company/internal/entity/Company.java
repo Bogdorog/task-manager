@@ -31,8 +31,7 @@ public class Company {
 
     private String address;
 
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 }

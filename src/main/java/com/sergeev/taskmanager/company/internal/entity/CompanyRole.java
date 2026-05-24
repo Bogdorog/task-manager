@@ -33,7 +33,7 @@ public class CompanyRole {
 
     private String description;
 
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -48,10 +48,5 @@ public class CompanyRole {
         return permissions.stream()
                 .map(Permission::getName)
                 .anyMatch(p -> Objects.equals(p, permission.getTitle()));
-    }
-
-    @PrePersist
-    public void prePersist() {
-        createdAt = LocalDateTime.now();
     }
 }

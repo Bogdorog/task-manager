@@ -1,13 +1,16 @@
 package com.sergeev.taskmanager.company.internal.service;
 
+import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
 import com.sergeev.taskmanager.company.api.dto.request.AssignRoleRequest;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteRoleRequest;
 import com.sergeev.taskmanager.company.api.dto.request.RoleRequest;
 import com.sergeev.taskmanager.company.internal.entity.*;
+import com.sergeev.taskmanager.company.internal.mapper.CompanyRoleMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRoleRepository;
 import com.sergeev.taskmanager.company.internal.repository.PermissionRepository;
+import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,14 +33,15 @@ public class CompanyRoleService {
     private final CompanyMembershipRepository membershipRepository;
     private final PermissionRepository permissionRepository;
     private final CheckPermissionService permissionService;
+    private final SecurityFacadeApi securityFacade;
+    private final CompanyRoleMapper mapper;
 
     // =========================
     // CREATE ROLE
     // =========================
     public void createRole(RoleRequest request) {
-
         permissionService.checkCompanyPermission(
-                request.actorId(),
+                securityFacade.getCurrentUserId(),
                 request.companyId(),
                 PermissionEnum.MANAGE_ROLES.name()
         );
@@ -85,7 +89,7 @@ public class CompanyRoleService {
     public void updateRole(Long roleId, RoleRequest request) {
 
         permissionService.checkCompanyPermission(
-                request.actorId(),
+                securityFacade.getCurrentUserId(),
                 request.companyId(),
                 PermissionEnum.MANAGE_ROLES.name()
         );
@@ -135,9 +139,9 @@ public class CompanyRoleService {
     // DELETE ROLE
     // =========================
     public void deleteRole(DeleteRoleRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
-                request.actorId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.MANAGE_ROLES.name()
         );
@@ -168,7 +172,7 @@ public class CompanyRoleService {
     // GET ROLES
     // =========================
     @Transactional(readOnly = true)
-    public List<CompanyRole> getRoles(
+    public List<CompanyRoleDto> getRoles(
             Long companyId,
             Long userId
     ) {
@@ -179,7 +183,11 @@ public class CompanyRoleService {
                 PermissionEnum.MANAGE_ROLES.name()
         );
 
-        return roleRepository.findAllByCompanyId(companyId);
+        List<CompanyRole> roles = roleRepository.findAllByCompanyId(companyId);
+
+        return roles.stream()
+                .map(mapper::toDto)
+                .toList();
     }
 
     // =========================
@@ -213,9 +221,9 @@ public class CompanyRoleService {
     // ASSIGN ROLE
     // =========================
     public void assignRole(AssignRoleRequest request) {
-
+        Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
-                request.actorId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.MANAGE_ROLES.name()
         );

@@ -4,6 +4,7 @@ import com.sergeev.taskmanager.media.api.MediaApi;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.user.api.UserApi;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import com.sergeev.taskmanager.user.api.dto.request.*;
 import com.sergeev.taskmanager.user.api.event.AccountDeletionRequestedEvent;
 import com.sergeev.taskmanager.user.api.event.PasswordResetRequestedEvent;
@@ -29,8 +30,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -149,6 +153,25 @@ public class UserService implements UserApi {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
         return userMapper.toDto(user);
+    }
+
+    @Override
+    public UserShortDto getShortUserById(Long id) {
+        return repository.findById(id)
+                .map(userMapper::toShortDto)
+                .orElse(null);
+    }
+
+    @Override
+    public Map<Long, UserShortDto> getUsersByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Map.of();
+
+        return repository.findAllById(ids)
+                .stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        userMapper::toShortDto
+                ));
     }
 
     public String getRole(String login) {
