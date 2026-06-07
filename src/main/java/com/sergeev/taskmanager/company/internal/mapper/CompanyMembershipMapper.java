@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.company.internal.mapper;
 
 import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
+import com.sergeev.taskmanager.company.api.dto.ShortCompanyMembershipDto;
 import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
 import com.sergeev.taskmanager.company.internal.entity.Permission;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
@@ -14,6 +15,10 @@ import java.util.stream.Collectors;
 public interface CompanyMembershipMapper {
     @Mapping(target = "user", ignore = true)
     CompanyMembershipDto toDto (CompanyMembership membership);
+
+    @Mapping(target = "name", ignore = true)
+    @Mapping(target = "role", expression = "java(membership.getRole().getName())")
+    ShortCompanyMembershipDto toShortDto (CompanyMembership membership);
 
     // Вспомогательные методы для конвертации прав
     default PermissionEnum mapPermission(Permission permission) {

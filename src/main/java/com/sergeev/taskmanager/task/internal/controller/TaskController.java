@@ -40,42 +40,15 @@ public class TaskController {
 
         UpdateTaskRequest updatedRequest = new UpdateTaskRequest(
                 taskId,
+                request.assignedToId(),
                 request.title(),
                 request.description(),
                 request.priority(),
+                request.status(),
                 request.dueDate()
         );
 
         return commandService.updateTask(updatedRequest);
-    }
-
-    @PatchMapping("/{taskId}/assign")
-    public TaskDto assignTask(
-            @PathVariable Long taskId,
-            @RequestBody AssignTaskRequest request
-    ) {
-
-        AssignTaskRequest updatedRequest =
-                new AssignTaskRequest(
-                        taskId,
-                        request.assignedUserId());
-
-        return commandService.assignTask(updatedRequest);
-    }
-
-    @PatchMapping("/{taskId}/status")
-    public TaskDto changeStatus(
-            @PathVariable Long taskId,
-            @RequestBody ChangeTaskStatusRequest request
-    ) {
-
-        ChangeTaskStatusRequest updatedRequest =
-                new ChangeTaskStatusRequest(
-                        taskId,
-                        request.status()
-                );
-
-        return commandService.changeStatus(updatedRequest);
     }
 
     @DeleteMapping("/{taskId}")
@@ -240,6 +213,21 @@ public class TaskController {
         boardService.createColumn(updatedRequest);
     }
 
+    @PutMapping("/boards/{boardId}/columns/{columnId}")
+    public void updateColumn(
+            @PathVariable Long columnId,
+            @RequestBody UpdateColumnRequest request
+    ) {
+
+        UpdateColumnRequest updatedRequest =
+                new UpdateColumnRequest(
+                        columnId,
+                        request.name()
+                );
+
+        boardService.updateColumn(updatedRequest);
+    }
+
     @PatchMapping("/boards/{boardId}/columns/{columnId}/move")
     public void moveColumn(
             @PathVariable Long boardId,
@@ -268,7 +256,9 @@ public class TaskController {
     // =========================================================
     // TASK MOVE
     // =========================================================
-
+    /**
+    Перемещение задачи между колонками
+     */
     @PatchMapping("/{taskId}/move")
     public void moveTask(
             @PathVariable Long taskId,
@@ -278,8 +268,7 @@ public class TaskController {
         MoveTaskRequest updatedRequest =
                 new MoveTaskRequest(
                         taskId,
-                        request.targetColumnId(),
-                        request.newPosition()
+                        request.newColumnId()
                 );
 
         boardService.moveTask(updatedRequest);

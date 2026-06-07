@@ -21,10 +21,10 @@ public class TaskHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JoinColumn(name = "task_id")
+    @JoinColumn(name = "task_id", nullable = false)
     private Long taskId;
 
-    @JoinColumn(name = "changed_by")
+    @JoinColumn(name = "changed_by", nullable = false)
     private Long changedBy;
 
     @Enumerated(EnumType.STRING)

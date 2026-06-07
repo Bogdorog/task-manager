@@ -56,6 +56,7 @@ public class BoardService {
                 .companyId(request.companyId())
                 .name(request.name())
                 .description(request.description())
+                .createdBy(securityFacade.getCurrentUserId())
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -110,9 +111,7 @@ public class BoardService {
         );
 
         Integer position = generateNextPosition(
-                columnRepository.findMaxPositionByBoardId(
-                        board.getId()
-                )
+                columnRepository.findMaxPositionByBoard_Id(board.getId())
         );
 
         BoardColumn column = BoardColumn.builder()
@@ -127,8 +126,8 @@ public class BoardService {
         return columnMapper.toDto(column);
     }
 
-    public BoardColumnDto updateColumn(Long columnId, String name) {
-        BoardColumn column = getColumn(columnId);
+    public BoardColumnDto updateColumn(UpdateColumnRequest request) {
+        BoardColumn column = getColumn(request.columnId());
 
         permissionApi.checkCompanyPermission(
                 securityFacade.getCurrentUserId(),
@@ -136,12 +135,14 @@ public class BoardService {
                 PermissionEnum.MANAGE_BOARDS.name()
         );
 
-        column.setName(name);
+        column.setName(request.name());
 
         return columnMapper.toDto(column);
     }
 
+    @Transactional
     public void moveColumn(MoveColumnRequest request) {
+
         BoardColumn column = getColumn(request.columnId());
 
         permissionApi.checkCompanyPermission(
@@ -164,9 +165,19 @@ public class BoardService {
                 Objects.equals(c.getId(), column.getId())
         );
 
-        columns.add(request.newIndex(), column);
+        Long newPosition = calculatePosition(
+                columns,
+                request.newIndex()
+        );
 
-        recalculateColumnPositions(columns);
+        column.setPosition(Math.toIntExact(newPosition));
+
+        if (needReorganization(columns, request.newIndex())) {
+
+            columns.add(request.newIndex(), column);
+
+            recalculateColumnPositions(columns);
+        }
     }
 
     public void deleteColumn(Long columnId) {
@@ -199,10 +210,9 @@ public class BoardService {
         reorganizePositionsIfNeeded(board.getId());
     }
 
-    // =========================================================
-    // MOVE TASK BETWEEN COLUMNS
-    // =========================================================
-
+    /**
+     * Перемещение задачи между колонками
+     */
     public void moveTask(MoveTaskRequest request) {
         Task task = taskRepository.findById(
                 request.taskId()
@@ -213,7 +223,7 @@ public class BoardService {
                 )
         );
 
-        BoardColumn targetColumn = getColumn(request.targetColumnId());
+        BoardColumn targetColumn = getColumn(request.newColumnId());
 
         validateSameBoard(
                 getColumn(task.getColumnId()),
@@ -313,6 +323,58 @@ public class BoardService {
         }
 
         return maxPosition + 1;
+    }
+
+    /**
+     *
+     * Расчет позиций при перемещении колонки
+     */
+    private Long calculatePosition(
+            List<BoardColumn> columns,
+            int targetIndex
+    ) {
+
+        if (columns.isEmpty()) {
+            return 0L;
+        }
+
+        if (targetIndex == 0) {
+            return (long) (columns.getFirst().getPosition() - POSITION_STEP);
+        }
+
+        if (targetIndex >= columns.size()) {
+            return (long) (columns.getLast().getPosition() + POSITION_STEP);
+        }
+
+        long left =
+                columns.get(targetIndex - 1).getPosition();
+
+        long right =
+                columns.get(targetIndex).getPosition();
+
+        return (left + right) / 2;
+    }
+
+    /**
+     * Проверка на необходимость перерасчета всех позиций колонок в пределах доски
+     */
+    private boolean needReorganization(
+            List<BoardColumn> columns,
+            int targetIndex
+    ) {
+
+        if (targetIndex == 0 ||
+                targetIndex >= columns.size()) {
+            return false;
+        }
+
+        long left =
+                columns.get(targetIndex - 1).getPosition();
+
+        long right =
+                columns.get(targetIndex).getPosition();
+
+        return right - left <= 1;
     }
 
     /**

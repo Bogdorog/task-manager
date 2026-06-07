@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.user.internal.service;
 
 import com.sergeev.taskmanager.media.api.MediaApi;
+import com.sergeev.taskmanager.media.api.dto.MediaAssetDto;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.user.api.UserApi;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
@@ -19,8 +20,6 @@ import com.sergeev.taskmanager.user.internal.repository.RoleRepository;
 import com.sergeev.taskmanager.user.internal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,7 +32,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,7 +51,6 @@ public class UserService implements UserApi {
     private final SecurityFacadeApi securityFacade;
 
     @Transactional
-    @CachePut(value = "user", key = "#request.login()")
     public UserDto register(RegisterUserRequest request) {
 
         if (repository.existsByEmail(request.email())) {
@@ -107,10 +104,8 @@ public class UserService implements UserApi {
     }
 
     @Transactional
-    @CachePut(value = "user", key = "#request.login()")
     public UserDto updateProfile(UpdateProfileRequest request) {
-
-        User user = repository.findByLogin(request.login())
+        User user = repository.findById(securityFacade.getCurrentUserId())
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
 
@@ -131,7 +126,6 @@ public class UserService implements UserApi {
         return userMapper.toDto(user);
     }
 
-    @Cacheable(value = "user", key = "#login")
     public UserDto getUser(String login) {
         User user = repository.findByLogin(login)
                 .orElseThrow(() ->
@@ -261,52 +255,59 @@ public class UserService implements UserApi {
     }
 
     @Transactional
-    @CachePut(value = "user", key = "#result.login()")
-    public CompletableFuture<UserDto> uploadAvatar(MultipartFile file) throws Exception {
+    public UserDto uploadAvatar(
+            MultipartFile file
+    ) {
+
         Long userId = securityFacade.getCurrentUserId();
+
         User user = repository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Пользователь не найден"
+                        ));
 
         UUID oldAvatarId = user.getAvatarMediaId();
 
-        // incidentId = null, значит аватар
-        return mediaApi.upload(file, userId, null)
-                .thenApply(dto -> {
-                    // Если был старый аватар — удаляем ТОЛЬКО связь с incident_id = NULL
-                    // Сам файл остаётся, если используется в инцидентах
-                    if (oldAvatarId != null && !oldAvatarId.equals(dto.id())) {
-                        try {
-                            mediaApi.unlinkAvatar(oldAvatarId, userId);
-                        } catch (Exception e) {
-                            log.warn("Не удалось отвязать старый аватар {}: {}", oldAvatarId, e.getMessage());
-                        }
-                    }
+        MediaAssetDto uploadedFile =
+                mediaApi.upload(file, userId);
 
-                    user.setAvatarMediaId(dto.id());
-                    repository.save(user);
-                    return userMapper.toDto(user);
-                });
+        user.setAvatarMediaId(uploadedFile.id());
+
+        if (oldAvatarId != null) {
+            try {
+                mediaApi.delete(oldAvatarId);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return userMapper.toDto(user);
     }
 
     @Transactional
-    @CachePut(value = "user", key = "#result.login()")
     public UserDto deleteAvatar() {
+
         Long userId = securityFacade.getCurrentUserId();
+
         User user = repository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Пользователь не найден"
+                        ));
 
-        if (user.getAvatarMediaId() != null) {
-            UUID avatarId = user.getAvatarMediaId();
+        UUID avatarId = user.getAvatarMediaId();
 
-            // Удаляем ссылку из данных пользователя
-            user.setAvatarMediaId(null);
-            repository.save(user);
-            // Удаляем связь из таблицы, если связей больше нет, файл удалится
-            try {
-                mediaApi.unlinkAvatar(avatarId, userId);
-            } catch (Exception e) {
-                log.warn("Не удалось удалить связь аватара {}: {}", avatarId, e.getMessage());
-            }
+        if (avatarId == null) {
+            return userMapper.toDto(user);
+        }
+
+        user.setAvatarMediaId(null);
+
+        try {
+            mediaApi.delete(avatarId);
+        } catch (Exception ignored) {
         }
 
         return userMapper.toDto(user);

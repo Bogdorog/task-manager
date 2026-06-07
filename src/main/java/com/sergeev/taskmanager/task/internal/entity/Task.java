@@ -44,13 +44,13 @@ public class Task {
     @Column(name = "assigned_to")
     private Long assignedTo;
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", nullable = false)
     private Long createdBy;
 
-    @Column(name = "board_id")
+    @Column(name = "board_id", nullable = false)
     private Long boardId;
 
-    @Column(name = "column_id")
+    @Column(name = "column_id", nullable = false)
     private Long columnId;
 
     private LocalDateTime dueDate;

@@ -18,13 +18,17 @@ public class PerformanceRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Column(name = "company_id")
+    private Long companyId;
 
     private Integer tasksCompletedCount;
 
     private Double averageCompletionTime;
 
+    @Column(nullable = false)
     private LocalDateTime periodStart;
 
     private LocalDateTime periodEnd;

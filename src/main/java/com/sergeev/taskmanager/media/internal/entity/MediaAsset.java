@@ -9,22 +9,34 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "photos")
+@Table(name = "media_assets")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class MediaAsset {
-
     @Id
     private UUID id;
 
-    @Column(name = "file_name", nullable = false)
-    private String fileName;
+    @Column(name = "original_name", nullable = false)
+    private String originalName;
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
+    @Column(name = "stored_name", nullable = false)
+    private String storedName;
+
+    @Column(name = "mime_type", nullable = false)
+    private String mimeType;
+
+    @Column(name = "file_size", nullable = false)
+    private Long fileSize;
+
+    @Column(name = "uploaded_by")
+    private Long uploadedBy;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }

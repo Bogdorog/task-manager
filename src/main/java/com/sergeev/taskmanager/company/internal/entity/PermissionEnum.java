@@ -8,14 +8,17 @@ public enum PermissionEnum {
     UPDATE_TASK("UPDATE_TASK"),
     DELETE_TASK("DELETE_TASK"),
     ASSIGN_TASK("ASSIGN_TASK"),
-    VIEW_TASK("VIEW_TASK"), // В будущем нужно удалить
+    VIEW_MEMBERS("VIEW_MEMBERS"),
+    VIEW_ROLES("VIEW_ROLES"),
     VIEW_ALL_TASKS("VIEW_ALL_TASKS"),
     MANAGE_COMPANY("MANAGE_COMPANY"),
+    MANAGE_MEMBERS("MANAGE_MEMBERS"),
     MANAGE_ROLES("MANAGE_ROLES"),
     INVITE_USER("INVITE_USER"),
     MANAGE_BOARDS("MANAGE_BOARDS"),
     // Это разрешение не должно появляться в бд,
     // но является внутренним условием на вызов особой проверки
+    VIEW_TASK("VIEW_TASK"),
     COMMENT_TASK("COMMENT_TASK"),
     DELETE_COMMENT("DELETE_COMMENT");
 

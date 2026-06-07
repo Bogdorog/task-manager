@@ -18,10 +18,10 @@ public class TaskComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "task_id")
+    @Column(name = "task_id", nullable = false)
     private Long taskId;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Column(name = "comment_text", nullable = false, columnDefinition = "TEXT")

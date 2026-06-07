@@ -8,10 +8,9 @@ import com.sergeev.taskmanager.user.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/user")
@@ -57,11 +56,15 @@ class UserController {
         service.confirmPasswordReset(request);
     }
 
-    @PutMapping("/me/avatar")
     @Operation(summary = "Изменить свой аватар")
-    public CompletableFuture<UserDto> uploadAvatar(
-            @RequestParam("file") MultipartFile file
-    ) throws Exception {
+    @PutMapping(
+            value = "/me/avatar",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public UserDto uploadAvatar(
+            @RequestPart("file") MultipartFile file
+    ) {
+
         return service.uploadAvatar(file);
     }
 

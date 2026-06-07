@@ -27,10 +27,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findAllByBoardId(Long boardId);
 
     @Query(value = """
-            SELECT b.company_id 
-            FROM tasks t 
-            JOIN board_columns bc ON t.column_id = bc.id 
-            JOIN boards b ON bc.board_id = b.id 
+            SELECT b.company_id
+            FROM tasks t
+            JOIN board_columns bc ON t.column_id = bc.id
+            JOIN boards b ON bc.board_id = b.id
             WHERE t.id = :taskId
             """, nativeQuery = true)
     Long findCompanyIdByTaskId(Long taskId);

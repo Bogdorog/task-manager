@@ -1,6 +1,5 @@
 package com.sergeev.taskmanager.company.api;
 
-import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 
 public interface CheckPermissionApi {
@@ -15,11 +14,6 @@ public interface CheckPermissionApi {
             Long userId,
             Long companyId,
             String permission
-    );
-
-    CompanyMembershipDto getMembership(
-            Long userId,
-            Long companyId
     );
 
     boolean isCompanyMember(

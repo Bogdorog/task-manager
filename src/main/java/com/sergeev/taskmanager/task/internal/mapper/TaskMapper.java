@@ -15,7 +15,8 @@ public interface TaskMapper {
 
     @Mapping(target = "assignedTo", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
-    TaskDto toDto(Task task);
+    @Mapping(target = "companyId", source = "companyId")
+    TaskDto toDto(Task task, Long companyId);
 
     @Mapping(target = "assignedTo", ignore = true)
     TaskShortDto toShortDto(Task task);

@@ -3,11 +3,9 @@ package com.sergeev.taskmanager.user.api;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import com.sergeev.taskmanager.user.api.dto.request.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public interface UserApi {
 
@@ -35,7 +33,7 @@ public interface UserApi {
 
     String getRole(Long id);
 
-    CompletableFuture<UserDto> uploadAvatar(MultipartFile file) throws Exception;
+    //CompletableFuture<UserDto> uploadAvatar(MultipartFile file) throws Exception;
 
-    UserDto deleteAvatar();
+    //UserDto deleteAvatar();
 }

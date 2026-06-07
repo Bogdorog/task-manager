@@ -93,6 +93,7 @@ public class CompanyService {
                 .toList();
     }
 
+    @Transactional
     public CompanyDto updateCompany(Long companyId, Long userId, CreateCompanyRequest request) {
 
         permissionService.checkCompanyPermission(
@@ -114,17 +115,21 @@ public class CompanyService {
         return mapper.toDto(company);
     }
 
+    @Transactional
     public void deleteCompany(DeleteCompanyRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
-        Company company = companyRepository.findById(request.companyId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Компания не найдена"));
+        // Проверяем права
+        if (!permissionService.isCompanyOwner(actorId, request.companyId())) {
+            throw new AccessDeniedException("Недостаточно прав для удаления этой компании");
+        }
 
-        if (permissionService.isCompanyOwner(
-                actorId, request.companyId())) {
-            companyRepository.delete(company);
-        } else throw new AccessDeniedException(
-                "Недостаточно прав"
-        );
+        // Проверяем, что компания вообще существует
+        if (!companyRepository.existsById(request.companyId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Компания не найдена");
+        }
+
+        // Удаляем без select
+        companyRepository.deleteById(request.companyId());
     }
 
     @Transactional

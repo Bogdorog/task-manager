@@ -1,14 +1,13 @@
 package com.sergeev.taskmanager.company.internal.controller;
 
-import com.sergeev.taskmanager.company.api.dto.CompanyDto;
-import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
-import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
+import com.sergeev.taskmanager.company.api.dto.*;
 import com.sergeev.taskmanager.company.api.dto.request.*;
 import com.sergeev.taskmanager.company.internal.service.CompanyMembershipService;
 import com.sergeev.taskmanager.company.internal.service.CompanyRoleService;
 import com.sergeev.taskmanager.company.internal.service.CompanyService;
 import com.sergeev.taskmanager.exception.BusinessRuleException;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -85,6 +84,17 @@ public class CompanyController {
     @GetMapping("/{companyId}/members")
     public List<CompanyMembershipDto> getMembers(@PathVariable Long companyId) {
         return membershipService.getMembers(
+                companyId,
+                security.getCurrentUserId()
+        );
+    }
+
+    /**
+     *  Получение списка сотрудников для отображения в окнах выбора.
+     */
+    @GetMapping("/{companyId}/members/short")
+    public List<ShortCompanyMembershipDto> getShortMembers(@PathVariable Long companyId) {
+        return membershipService.getShortMembers(
                 companyId,
                 security.getCurrentUserId()
         );
@@ -177,5 +187,13 @@ public class CompanyController {
                         userId,
                         request.newOwnerRoleId());
         service.transferOwnership(updatedRequest);
+    }
+
+    @GetMapping("/{companyId}/permissions/me")
+    @Operation(summary = "Возможности пользователя")
+    public CompanyPermissionsDto getMyPermissions(
+            @PathVariable Long companyId
+    ) {
+        return membershipService.getCurrentUserPermissions(companyId);
     }
 }

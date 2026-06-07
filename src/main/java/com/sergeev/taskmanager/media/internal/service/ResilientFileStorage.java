@@ -5,6 +5,7 @@ import com.sergeev.taskmanager.media.api.dto.StorageSaveResult;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,6 +13,7 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 
 @Component("resilientFileStorage")
+@Primary
 public class ResilientFileStorage implements FileStorage {
 
     private final FileSystemStorage delegate;

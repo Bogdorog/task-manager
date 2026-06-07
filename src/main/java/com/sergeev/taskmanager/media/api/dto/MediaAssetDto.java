@@ -10,10 +10,7 @@ public record MediaAssetDto(
         UUID id,
 
         @Schema(description = "Идентификатор владельца ресурса", example = "789")
-        Long ownerId,
-
-        @Schema(description = "Идентификатор инцидента, к которому прикреплен ресурс", example = "123")
-        Long incidentId,
+        Long uploadedBy,
 
         @Schema(description = "Имя файла", example = "incident-image.jpg")
         String fileName,

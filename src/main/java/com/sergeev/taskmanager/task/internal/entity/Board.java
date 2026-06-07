@@ -26,10 +26,10 @@ public class Board {
     @Column(length = 4000)
     private String description;
 
-    @Column(name = "company_id")
+    @Column(name = "company_id", nullable = false)
     private Long companyId;
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", nullable = false)
     private Long createdBy;
 
     @Builder.Default
@@ -40,6 +40,6 @@ public class Board {
     )
     private List<BoardColumn> columns = new ArrayList<>();
 
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 }

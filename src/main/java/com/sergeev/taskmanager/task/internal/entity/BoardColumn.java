@@ -42,6 +42,6 @@ public class BoardColumn {
     )
     private List<Task> tasks = new ArrayList<>();
 
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 }

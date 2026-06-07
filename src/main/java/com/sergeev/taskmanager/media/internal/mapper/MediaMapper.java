@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface MediaMapper {
     MediaAsset toEntity(MediaAssetDto dto);
     @Mapping(target = "downloadUrl", source = "downloadUrl")
-    MediaAssetDto toResponse(MediaAsset entity, String downloadUrl);
-    MediaAssetDto toResponse(MediaAsset entity);
+    @Mapping(target = "fileName", expression = "java(entity.getOriginalName())")
+    MediaAssetDto toDto(MediaAsset entity, String downloadUrl);
+    MediaAssetDto toDto(MediaAsset entity);
 }

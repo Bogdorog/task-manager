@@ -10,10 +10,6 @@ public interface TaskApi {
 
     TaskDto updateTask(UpdateTaskRequest request);
 
-    TaskDto assignTask(AssignTaskRequest request);
-
-    TaskDto changeStatus(ChangeTaskStatusRequest request);
-
     void deleteTask(DeleteTaskRequest request);
 
     TaskCommentDto addComment(AddCommentRequest request);

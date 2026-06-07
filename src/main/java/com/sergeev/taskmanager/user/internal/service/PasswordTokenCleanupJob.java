@@ -17,7 +17,7 @@ class PasswordTokenCleanupJob {
     }
 
     @Scheduled(cron = "0 0 * * * *") // каждый час
-    @Transactional(readOnly = false, rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class)
     void cleanup() {
         repository.deleteExpiredOrUsed(LocalDateTime.now());
     }

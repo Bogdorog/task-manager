@@ -5,5 +5,6 @@ import java.util.UUID;
 public record StorageSaveResult(
         UUID id,
         String checksum,
-        String filePath
+        String filePath,
+        String mimeType
 ) {}

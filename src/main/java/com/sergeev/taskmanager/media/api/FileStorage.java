@@ -7,8 +7,8 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 
 public interface FileStorage {
-    CompletableFuture<StorageSaveResult> save(MultipartFile file) throws Exception;
-    CompletableFuture<InputStream> load(String filePath) throws Exception;
-    CompletableFuture<Boolean> delete(String filePath) throws Exception;
+    CompletableFuture<StorageSaveResult> save(MultipartFile file);
+    CompletableFuture<InputStream> load(String filePath);
+    CompletableFuture<Boolean> delete(String filePath);
 }
 

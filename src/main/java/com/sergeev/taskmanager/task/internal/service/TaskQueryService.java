@@ -48,15 +48,7 @@ public class TaskQueryService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        TaskDto base = taskMapper.toDto(task);
-        return enrichTaskWithUsers(task, base);
-    }
-
-    public TaskDto getTaskById(Long taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
-
-        TaskDto base = taskMapper.toDto(task);
+        TaskDto base = taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(task.getId()));
         return enrichTaskWithUsers(task, base);
     }
 
@@ -109,7 +101,7 @@ public class TaskQueryService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task)));
+        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(task.getId()))));
 
         List<TaskComment> comments = commentRepository.findAllByTaskId(taskId);
 
@@ -142,7 +134,7 @@ public class TaskQueryService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
 
-        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task)));
+        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(task.getId()))));
 
         return historyRepository.findAllByTaskIdOrderByChangedAtDesc(taskId);
     }
@@ -199,7 +191,7 @@ public class TaskQueryService {
                         .comparing(Task::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(Task::getCreatedAt, Comparator.reverseOrder()))
                 .map(task -> {
-                    TaskDto base = taskMapper.toDto(task);
+                    TaskDto base = taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(task.getId()));
                     return enrichTaskWithUsers(task, base, usersMap);
                 })
                 .toList();
@@ -209,7 +201,7 @@ public class TaskQueryService {
      * Обогащение одной задачи (использует пакетный маппинг, если передан usersMap).
      */
     private TaskDto enrichTaskWithUsers(Task task, TaskDto base) {
-        // Для одиночной задачи — два отдельных запроса (это ок)
+        // Для одиночной задачи — два отдельных запроса
         UserShortDto assignedTo = task.getAssignedTo() != null
                 ? userApi.getShortUserById(task.getAssignedTo())
                 : null;

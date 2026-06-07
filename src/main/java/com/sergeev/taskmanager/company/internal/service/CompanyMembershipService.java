@@ -1,6 +1,8 @@
 package com.sergeev.taskmanager.company.internal.service;
 
 import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
+import com.sergeev.taskmanager.company.api.dto.CompanyPermissionsDto;
+import com.sergeev.taskmanager.company.api.dto.ShortCompanyMembershipDto;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteMemberRequest;
 import com.sergeev.taskmanager.company.api.dto.request.InviteUserRequest;
 import com.sergeev.taskmanager.company.api.dto.request.LeaveCompanyRequest;
@@ -9,9 +11,11 @@ import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
 import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyMembershipMapper;
+import com.sergeev.taskmanager.company.internal.mapper.CompanyPermissionMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRoleRepository;
+import com.sergeev.taskmanager.company.internal.repository.RolePermissionRepository;
 import com.sergeev.taskmanager.exception.BusinessRuleException;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.user.api.UserApi;
@@ -38,9 +42,11 @@ public class CompanyMembershipService {
     private final CompanyMembershipRepository membershipRepository;
     private final CompanyRepository companyRepository;
     private final CompanyRoleRepository roleRepository;
+    private final RolePermissionRepository rolePermissionRepository;
     private final CheckPermissionService permissionService;
     private final UserApi userApi;
-    private final CompanyMembershipMapper mapper;
+    private final CompanyMembershipMapper membershipMapper;
+    private final CompanyPermissionMapper permissionMapper;
     private final SecurityFacadeApi securityFacade;
 
     public void inviteUser(
@@ -191,7 +197,7 @@ public class CompanyMembershipService {
         // Маппинг + обогащение
         return memberships.stream()
                 .map(membership -> {
-                    CompanyMembershipDto base = mapper.toDto(membership);
+                    CompanyMembershipDto base = membershipMapper.toDto(membership);
                     UserShortDto user = membership.getUserId() != null
                             ? usersMap.get(membership.getUserId())
                             : null;
@@ -200,5 +206,67 @@ public class CompanyMembershipService {
                     );
                 })
                 .toList();
+    }
+
+    /**
+     * Получение короткого (служебного) списка участников компании.
+     */
+    @Transactional(readOnly = true)
+    public List<ShortCompanyMembershipDto> getShortMembers(Long companyId, Long actorId) {
+        if (!permissionService.isCompanyMember(actorId, companyId)) {
+            throw new AccessDeniedException("Невозможно посмотреть сотрудников чужой компании");
+        }
+
+        List<CompanyMembership> memberships = membershipRepository.findAllByCompanyId(companyId);
+
+        // Пакетно собираем все userId
+        Set<Long> userIds = memberships.stream()
+                .map(CompanyMembership::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserShortDto> usersMap = userApi.getUsersByIds(userIds);
+
+        // Маппинг + обогащение
+        return memberships.stream()
+                .map(membership -> {
+                    ShortCompanyMembershipDto base = membershipMapper.toShortDto(membership);
+                    UserShortDto user = membership.getUserId() != null
+                            ? usersMap.get(membership.getUserId())
+                            : null;
+                    return new ShortCompanyMembershipDto(
+                            base.id(), user.fullName(), base.role());
+                })
+                .toList();
+    }
+
+    /**
+     * Получение информации о себе как сотруднике компании.
+     */
+    public CompanyMembershipDto getMembership(Long companyId) {
+        CompanyMembership membership = membershipRepository
+                .findByUserIdAndCompanyId(securityFacade.getCurrentUserId(), companyId)
+                .orElseThrow(() -> new AccessDeniedException("Пользователь не состоит в компании"));
+
+        CompanyMembershipDto base = membershipMapper.toDto(membership);
+
+        // Обогащение пользователем
+        UserShortDto user = membership.getUserId() != null
+                ? userApi.getShortUserById(membership.getUserId())
+                : null;
+
+        return new CompanyMembershipDto(
+                base.id(), user, base.role(), base.joinedAt()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CompanyPermissionsDto getCurrentUserPermissions (Long companyId)
+    {
+        CompanyMembershipDto membership = getMembership(companyId);
+        if (membership.role().name().equals(Company.OWNER))
+        {
+            return permissionMapper.ownerToDto();
+        } else return permissionMapper.toDto(membership.role().permissions());
     }
 }

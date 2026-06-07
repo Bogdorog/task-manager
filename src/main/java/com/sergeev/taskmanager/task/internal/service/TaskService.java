@@ -12,9 +12,10 @@ import com.sergeev.taskmanager.task.internal.entity.*;
 import com.sergeev.taskmanager.task.internal.mapper.TaskCommentMapper;
 import com.sergeev.taskmanager.task.internal.mapper.TaskMapper;
 import com.sergeev.taskmanager.task.internal.repository.BoardColumnRepository;
-import com.sergeev.taskmanager.task.internal.repository.BoardRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskCommentRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskRepository;
+import com.sergeev.taskmanager.user.api.UserApi;
+import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class TaskService implements TaskApi {
 
     private final TaskRepository taskRepository;
     private final TaskCommentRepository commentRepository;
-    private final BoardRepository boardRepository;
+    private final UserApi userApi;
     private final BoardColumnRepository columnRepository;
     private final CompanyMembershipRepository membershipRepository;
     private final CheckPermissionApi permissionApi;
@@ -81,8 +82,9 @@ public class TaskService implements TaskApi {
                 .title(request.title())
                 .description(request.description())
                 .priority(request.priority())
-                .status(TaskStatus.OPEN)
+                .status(TaskStatus.BACKLOG)
                 .columnId(column.getId())
+                .boardId(column.getBoard().getId())
                 .createdBy(actorId)
                 .assignedTo(request.assignedUserId())
                 .dueDate(request.dueDate())
@@ -104,7 +106,7 @@ public class TaskService implements TaskApi {
                 actorId,
                 TaskHistoryField.STATUS,
                 null,
-                TaskStatus.OPEN.name()
+                TaskStatus.BACKLOG.name()
         );
 
         if (request.assignedUserId() != null) {
@@ -118,7 +120,7 @@ public class TaskService implements TaskApi {
             );
         }
 
-        return taskMapper.toDto(task);
+        return taskMapper.toDto(task, request.companyId());
     }
 
     // =========================================================
@@ -128,11 +130,12 @@ public class TaskService implements TaskApi {
     @Override
     public TaskDto updateTask(UpdateTaskRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
+        Long companyId = taskRepository.findCompanyIdByTaskId(request.taskId());
         Task task = getTask(request.taskId());
 
         permissionApi.checkCompanyPermission(
                 actorId,
-                taskRepository.findCompanyIdByTaskId(request.taskId()),
+                companyId,
                 PermissionEnum.UPDATE_TASK.name()
         );
 
@@ -140,85 +143,12 @@ public class TaskService implements TaskApi {
         updateDescription(task, actorId, request);
         updatePriority(task, actorId, request);
         updateDueDate(task, actorId, request);
+        changeStatus(task, actorId, request);
+        assignTask(task, actorId, request);
 
         task.setUpdatedAt(LocalDateTime.now());
 
-        return taskMapper.toDto(task);
-    }
-
-    // =========================================================
-    // ASSIGN TASK
-    // =========================================================
-
-    @Override
-    public TaskDto assignTask(AssignTaskRequest request) {
-        Long actorId = securityFacade.getCurrentUserId();
-        Task task = getTask(request.taskId());
-        Long companyId = taskRepository.findCompanyIdByTaskId(request.taskId());
-
-        permissionApi.checkCompanyPermission(
-                actorId,
-                companyId,
-                PermissionEnum.ASSIGN_TASK.name()
-        );
-
-        validateMembershipIfAssigned(
-                request.assignedUserId(),
-                companyId
-        );
-
-        Long oldAssigned = task.getAssignedTo();
-
-        task.setAssignedTo(request.assignedUserId());
-        task.setUpdatedAt(LocalDateTime.now());
-
-        historyService.record(
-                task,
-                actorId,
-                TaskHistoryField.ASSIGNED_TO,
-                oldAssigned == null
-                        ? null
-                        : oldAssigned.toString(),
-                request.assignedUserId() == null
-                        ? null
-                        : request.assignedUserId().toString()
-        );
-
-        return taskMapper.toDto(task);
-    }
-
-    // =========================================================
-    // CHANGE STATUS
-    // =========================================================
-
-    @Override
-    public TaskDto changeStatus(ChangeTaskStatusRequest request) {
-        Long actorId = securityFacade.getCurrentUserId();
-        Task task = getTask(request.taskId());
-
-        permissionApi.checkCanViewTask(
-                actorId,
-                taskMapper.toDto(task)
-        );
-
-        TaskStatus oldStatus = task.getStatus();
-
-        if (oldStatus == request.status()) {
-            return taskMapper.toDto(task);
-        }
-
-        task.setStatus(request.status());
-        task.setUpdatedAt(LocalDateTime.now());
-
-        historyService.record(
-                task,
-                actorId,
-                TaskHistoryField.STATUS,
-                oldStatus.name(),
-                request.status().name()
-        );
-
-        return taskMapper.toDto(task);
+        return taskMapper.toDto(task, companyId);
     }
 
     // =========================================================
@@ -230,14 +160,21 @@ public class TaskService implements TaskApi {
         Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
 
+        UserShortDto assignedTo = userApi.getShortUserById(task.getAssignedTo());
+        UserShortDto createdBy = userApi.getShortUserById(task.getCreatedBy());
+        TaskDto taskDto = taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(request.taskId()));
+
         permissionApi.checkCanViewTask(
                 actorId,
-                taskMapper.toDto(task)
+                new TaskDto(taskDto.id(), taskDto.title(), taskDto.description(),
+                        taskDto.status(), taskDto.priority(), assignedTo, createdBy,
+                        taskDto.companyId(), taskDto.columnId(), taskDto.dueDate(),
+                        taskDto.createdAt(), taskDto.updatedAt())
         );
 
         permissionApi.checkCompanyPermission(
                 actorId,
-                taskRepository.findCompanyIdByTaskId(request.taskId()),
+                taskDto.companyId(),
                 PermissionEnum.COMMENT_TASK.name()
         );
 
@@ -482,6 +419,53 @@ public class TaskService implements TaskApi {
         );
 
         task.setDueDate(request.dueDate());
+    }
+
+    private void changeStatus(Task task,
+                              Long actorId,
+                              UpdateTaskRequest request) {
+        if (Objects.equals(
+                task.getStatus().name(),
+                request.status().name()
+        )) {
+            return;
+        }
+
+        historyService.record(
+                task,
+                actorId,
+                TaskHistoryField.STATUS,
+                task.getStatus().name(),
+                request.status().name()
+        );
+
+        task.setStatus(request.status());
+    }
+
+    private void assignTask(Task task,
+                            Long actorId,
+                            UpdateTaskRequest request) {
+
+        validateMembershipIfAssigned(
+                request.assignedToId(),
+                taskRepository.findCompanyIdByTaskId(request.taskId())
+        );
+
+        Long oldAssigned = task.getAssignedTo();
+
+        historyService.record(
+                task,
+                actorId,
+                TaskHistoryField.ASSIGNED_TO,
+                oldAssigned == null
+                        ? null
+                        : oldAssigned.toString(),
+                request.assignedToId() == null
+                        ? null
+                        : request.assignedToId().toString()
+        );
+
+        task.setAssignedTo(request.assignedToId());
     }
 
     private String truncateComment(String text) {

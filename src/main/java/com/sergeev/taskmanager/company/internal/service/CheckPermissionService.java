@@ -1,15 +1,12 @@
 package com.sergeev.taskmanager.company.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
-import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
 import com.sergeev.taskmanager.company.internal.entity.Company;
-import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
 import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyMembershipMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 import com.sergeev.taskmanager.user.api.UserApi;
-import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -63,23 +60,6 @@ public class CheckPermissionService implements CheckPermissionApi {
                                 .hasPermission(PermissionEnum.valueOf(permission))
                 )
                 .orElse(false);
-    }
-
-    public CompanyMembershipDto getMembership(Long userId, Long companyId) {
-        CompanyMembership membership = membershipRepository
-                .findByUserIdAndCompanyId(userId, companyId)
-                .orElseThrow(() -> new AccessDeniedException("Пользователь не состоит в компании"));
-
-        CompanyMembershipDto base = membershipMapper.toDto(membership);
-
-        // Обогащение пользователем
-        UserShortDto user = membership.getUserId() != null
-                ? userApi.getShortUserById(membership.getUserId())
-                : null;
-
-        return new CompanyMembershipDto(
-                base.id(), user, base.role(), base.joinedAt()
-        );
     }
 
     @Override
