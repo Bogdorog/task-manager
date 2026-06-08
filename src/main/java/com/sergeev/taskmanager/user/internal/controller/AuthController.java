@@ -3,6 +3,8 @@ package com.sergeev.taskmanager.user.internal.controller;
 import com.sergeev.taskmanager.user.api.UserApi;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.request.LoginRequest;
+import com.sergeev.taskmanager.user.api.dto.request.PasswordResetConfirmRequest;
+import com.sergeev.taskmanager.user.api.dto.request.PasswordResetRequest;
 import com.sergeev.taskmanager.user.api.dto.request.RegisterUserRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -58,5 +60,17 @@ public class AuthController {
     )
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(userApi.login(request));
+    }
+
+    @PostMapping("/password/reset/request")
+    @Operation(summary = "Запрос на смену пароля")
+    public void requestReset(@RequestBody PasswordResetRequest request) {
+        userApi.initiatePasswordReset(request);
+    }
+
+    @PostMapping("/password/reset/confirm")
+    @Operation(summary = "Смена пароля")
+    public void confirmReset(@RequestBody PasswordResetConfirmRequest request) {
+        userApi.confirmPasswordReset(request);
     }
 }

@@ -1,8 +1,6 @@
 package com.sergeev.taskmanager.user.internal.controller;
 
 import com.sergeev.taskmanager.user.api.dto.UserDto;
-import com.sergeev.taskmanager.user.api.dto.request.PasswordResetConfirmRequest;
-import com.sergeev.taskmanager.user.api.dto.request.PasswordResetRequest;
 import com.sergeev.taskmanager.user.api.dto.request.UpdateProfileRequest;
 import com.sergeev.taskmanager.user.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,18 +40,6 @@ class UserController {
     @Operation(summary = "Изменить информацию о себе")
     public UserDto update(@RequestBody UpdateProfileRequest request) {
         return service.updateProfile(request);
-    }
-
-    @PostMapping("/password/reset/request")
-    @Operation(summary = "Запрос на смену пароля")
-    public void requestReset(@RequestBody PasswordResetRequest request) {
-        service.initiatePasswordReset(request);
-    }
-
-    @PostMapping("/password/reset/confirm")
-    @Operation(summary = "Смена пароля")
-    public void confirmReset(@RequestBody PasswordResetConfirmRequest request) {
-        service.confirmPasswordReset(request);
     }
 
     @Operation(summary = "Изменить свой аватар")

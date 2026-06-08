@@ -32,8 +32,8 @@ public class SecurityConfig {
     public static final String SIGNIN_ENTRY_POINT = "/api/auth/login";
     public static final String SIGNUP_ENTRY_POINT = "/api/auth/register";
     public static final String SWAGGER_ENTRY_POINT = "/swagger-ui/**";
-    public static final String FORGOT_PASSWORD_POINT = "/api/user/password/reset/request";
-    public static final String RESET_PASSWORD_POINT = "/api/user/password/reset/confirm";
+    public static final String FORGOT_PASSWORD_POINT = "/api/auth/password/reset/request";
+    public static final String RESET_PASSWORD_POINT = "/api/auth/password/reset/confirm";
     public static final String API_DOCS_ENTRY_POINT = "/api-docs/**";
     public static final String TOKEN_REFRESH_ENTRY_POINT = "/auth/refreshToken";
     private final AuthenticationManager authenticationManager;
