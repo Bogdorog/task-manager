@@ -37,7 +37,7 @@ public class RefreshTokenAuthenticationProvider implements AuthenticationProvide
             throw new BadCredentialsException("Неправильный или устаревший токен");
         }
 
-        // Загружаем владельца по userId из записи токена
+        // Загружаем владельца по user из записи токена
         // Если пользователь удалён или заблокирован — аутентификация упадёт здесь
         UserDetails userDetails;
         try {

@@ -15,10 +15,10 @@ import com.sergeev.taskmanager.company.internal.mapper.CompanyPermissionMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRoleRepository;
-import com.sergeev.taskmanager.company.internal.repository.RolePermissionRepository;
 import com.sergeev.taskmanager.exception.BusinessRuleException;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.user.api.UserApi;
+import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -42,35 +42,28 @@ public class CompanyMembershipService {
     private final CompanyMembershipRepository membershipRepository;
     private final CompanyRepository companyRepository;
     private final CompanyRoleRepository roleRepository;
-    private final RolePermissionRepository rolePermissionRepository;
     private final CheckPermissionService permissionService;
     private final UserApi userApi;
     private final CompanyMembershipMapper membershipMapper;
     private final CompanyPermissionMapper permissionMapper;
     private final SecurityFacadeApi securityFacade;
 
-    public void inviteUser(
-            InviteUserRequest request
-    ) throws BusinessRuleException {
+    public void inviteUser(InviteUserRequest request) {
         permissionService.checkCompanyPermission(
                 securityFacade.getCurrentUserId(),
                 request.companyId(),
                 PermissionEnum.INVITE_USER.getTitle()
         );
-        userApi.getUserById(request.userId());
+        UserDto user = userApi.getUser(request.user());
 
-        boolean alreadyMember =
-                membershipRepository
-                        .existsByUserIdAndCompanyId(
-                                request.userId(),
-                                request.companyId()
-                        );
+        boolean alreadyMember = membershipRepository.existsByUserIdAndCompanyId(
+                user.id(),
+                request.companyId()
+        );
 
-        if (alreadyMember) {
-
-            throw new BusinessRuleException(
-                    "Пользователь уже состоит в компании"
-            );
+        if (alreadyMember)
+        {
+            throw new BusinessRuleException("Пользователь уже состоит в компании");
         }
 
         CompanyRole role =
@@ -85,13 +78,9 @@ public class CompanyMembershipService {
                                 )
                         );
 
-        if (Company.OWNER.equals(
-                role.getName()
-        )) {
-
-            throw new BusinessRuleException(
-                    "Нельзя назначить роль владельца"
-            );
+        if (Company.OWNER.equals(role.getName()))
+        {
+            throw new BusinessRuleException("Нельзя назначить роль владельца");
         }
 
         Company company =
@@ -105,7 +94,7 @@ public class CompanyMembershipService {
 
         CompanyMembership membership =
                 CompanyMembership.builder()
-                        .userId(request.userId())
+                        .userId(user.id())
                         .company(company)
                         .role(role)
                         .joinedAt(LocalDateTime.now())
@@ -186,7 +175,7 @@ public class CompanyMembershipService {
 
         List<CompanyMembership> memberships = membershipRepository.findAllByCompanyId(companyId);
 
-        // Пакетно собираем все userId
+        // Пакетно собираем все user
         Set<Long> userIds = memberships.stream()
                 .map(CompanyMembership::getUserId)
                 .filter(Objects::nonNull)
@@ -219,7 +208,7 @@ public class CompanyMembershipService {
 
         List<CompanyMembership> memberships = membershipRepository.findAllByCompanyId(companyId);
 
-        // Пакетно собираем все userId
+        // Пакетно собираем все user
         Set<Long> userIds = memberships.stream()
                 .map(CompanyMembership::getUserId)
                 .filter(Objects::nonNull)

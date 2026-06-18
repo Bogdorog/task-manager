@@ -4,30 +4,15 @@ import com.sergeev.taskmanager.task.api.dto.TaskDto;
 
 public interface CheckPermissionApi {
 
-    void checkCompanyPermission(
-            Long userId,
-            Long companyId,
-            String permission
-    );
+    void checkCompanyPermission(Long userId, Long companyId, String permission);
 
-    boolean hasCompanyPermission(
-            Long userId,
-            Long companyId,
-            String permission
-    );
+    boolean hasCompanyPermission(Long userId, Long companyId, String permission);
 
-    boolean isCompanyMember(
-            Long userId,
-            Long companyId
-    );
+    boolean isCompanyMember(Long userId, Long companyId);
 
-    boolean isCompanyOwner(
-            Long userId,
-            Long companyId
-    );
+    boolean isCompanyOwner(Long userId, Long companyId);
 
-    void checkCanViewTask(
-            Long userId,
-            TaskDto task
-    );
+    void checkCanViewTask(Long userId, TaskDto task);
+
+    boolean checkCanViewTasks(Long userId, Long companyId);
 }

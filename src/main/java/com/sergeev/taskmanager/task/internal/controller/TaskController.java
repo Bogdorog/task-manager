@@ -125,13 +125,6 @@ public class TaskController {
         return queryService.getCreatedTasks(companyId);
     }
 
-    @GetMapping("/columns/{columnId}")
-    public List<TaskDto> getColumnTasks(
-            @PathVariable Long columnId
-    ) {
-        return queryService.getColumnTasks(columnId);
-    }
-
     @GetMapping("/{taskId}/comments")
     public List<TaskCommentDto> getComments(
             @PathVariable Long taskId

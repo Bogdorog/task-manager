@@ -71,11 +71,11 @@ public class CompanyController {
     public void inviteUser(
             @PathVariable Long companyId,
             @RequestBody InviteUserRequest request
-    ) throws BusinessRuleException {
+    ) {
         InviteUserRequest updatedRequest =
                 new InviteUserRequest(
                         companyId,
-                        request.userId(),
+                        request.user(),
                         request.roleId());
         membershipService.inviteUser(updatedRequest);
     }
@@ -90,7 +90,7 @@ public class CompanyController {
     }
 
     /**
-     *  Получение списка сотрудников для отображения в окнах выбора.
+     *  Получение списка сотрудников для отображения в окнах выбора
      */
     @GetMapping("/{companyId}/members/short")
     public List<ShortCompanyMembershipDto> getShortMembers(@PathVariable Long companyId) {
@@ -100,7 +100,9 @@ public class CompanyController {
         );
     }
 
-    // REMOVE USER
+    /**
+     *  Запрос на увольнение сотрудника
+     */
     @DeleteMapping("/{companyId}/members/{membershipId}")
     public void removeUser(@PathVariable Long companyId,
                            @PathVariable Long membershipId) throws BusinessRuleException {
@@ -111,7 +113,9 @@ public class CompanyController {
         membershipService.removeUser(request);
     }
 
-    // LEAVE COMPANY
+    /**
+     *  Запрос на покидание компании
+     */
     @DeleteMapping("/{companyId}/leave")
     public void leave(@PathVariable Long companyId) throws BusinessRuleException {
         LeaveCompanyRequest request =
@@ -120,7 +124,9 @@ public class CompanyController {
         membershipService.leaveCompany(request);
     }
 
-    // GET ROLES
+    /**
+     * Запрос на просмотр ролей
+     */
     @GetMapping("/{companyId}/roles")
     public List<CompanyRoleDto> getRoles(@PathVariable Long companyId) {
         return roleService.getRoles(
@@ -129,20 +135,31 @@ public class CompanyController {
         );
     }
 
-    // CREATE ROLE
+    /**
+     * Запрос на создание роли
+     */
     @PostMapping("/{companyId}/roles")
     public void createRole(
             @PathVariable Long companyId,
             @RequestBody RoleRequest request
     ) {
-        roleService.createRole(
-                request
-        );
+        roleService.createRole(request);
     }
 
-    // =========================
-    // DELETE ROLE
-    // =========================
+    /**
+     * Запрос на редактирование роли
+     */
+    @PutMapping("/{companyId}/role/{roleId}")
+    public void updateRole(
+            @PathVariable Long roleId,
+            @RequestBody RoleRequest request
+    ) {
+        roleService.updateRole(roleId, request);
+    }
+
+    /**
+     * Запрос на удаление роли
+     */
     @DeleteMapping("/{companyId}/roles/{roleId}")
     public void deleteRole(
             @PathVariable Long companyId,
@@ -155,9 +172,9 @@ public class CompanyController {
         roleService.deleteRole(request);
     }
 
-    // =========================
-    // ASSIGN ROLE
-    // =========================
+    /**
+     *  Запрос на назначение сотруднику новой роли
+     */
     @PutMapping("/{companyId}/members/{membershipId}/role")
     public void assignRole(
             @PathVariable Long companyId,

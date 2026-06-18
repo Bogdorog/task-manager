@@ -109,6 +109,20 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    // Обработка нарушения бизнес-логики
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRuleExceptions(BusinessRuleException ex, HttpServletRequest request) {
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
     // Обработка других общих исключений
     @ExceptionHandler({Exception.class})
     public ResponseEntity<ErrorResponse> handleInternalError(RuntimeException ex,

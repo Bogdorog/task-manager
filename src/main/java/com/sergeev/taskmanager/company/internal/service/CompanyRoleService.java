@@ -83,9 +83,12 @@ public class CompanyRoleService {
         roleRepository.save(role);
     }
 
-    // =========================
-    // UPDATE ROLE
-    // =========================
+
+    /**
+     * Редактирование роли
+     * @param roleId ID редактируемой роли
+     * @param request Тело запроса на редактирование роли
+     */
     public void updateRole(Long roleId, RoleRequest request) {
 
         permissionService.checkCompanyPermission(
@@ -180,7 +183,7 @@ public class CompanyRoleService {
         permissionService.checkCompanyPermission(
                 userId,
                 companyId,
-                PermissionEnum.MANAGE_ROLES.name()
+                PermissionEnum.VIEW_ROLES.name()
         );
 
         List<CompanyRole> roles = roleRepository.findAllByCompanyId(companyId);

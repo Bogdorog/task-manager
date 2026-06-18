@@ -44,6 +44,17 @@ public class CheckPermissionService implements CheckPermissionApi {
         }
     }
 
+    public boolean checkCanViewTasks(Long userId, Long companyId) {
+
+        if (!hasCompanyPermission(userId, companyId,
+                PermissionEnum.VIEW_ALL_TASKS.getTitle())
+                && !isCompanyOwner(userId, companyId))
+        {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean hasCompanyPermission(
             Long userId,

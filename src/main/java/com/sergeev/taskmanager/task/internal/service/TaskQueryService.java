@@ -14,6 +14,7 @@ import com.sergeev.taskmanager.task.internal.repository.*;
 import com.sergeev.taskmanager.user.api.UserApi;
 import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -52,44 +53,58 @@ public class TaskQueryService {
         return enrichTaskWithUsers(task, base);
     }
 
-    // =========================
-    // TASKS — LISTS (пакетное обогащение)
-    // =========================
-
+    /**
+     * Получить все задачи компании
+     */
     public List<TaskDto> getCompanyTasks(Long companyId) {
-        permissionApi.checkCompanyPermission(securityFacadeApi.getCurrentUserId(), companyId, PermissionEnum.VIEW_TASK.name());
 
-        List<Task> tasks = taskRepository.findAllByCompanyId(companyId);
-        return enrichTasksWithUsers(tasks);
+        List<TaskDto> myTasks = getMyTasks(companyId);
+        List<TaskDto> createdTasks = getCreatedTasks(companyId);
+        List<TaskDto> otherTasks = getOtherTasks(companyId);
+        List<TaskDto> preResult = Stream.concat(myTasks.stream(), createdTasks.stream())
+                .distinct()
+                .collect(Collectors.toList());
+        if (otherTasks != null && !otherTasks.isEmpty()) {
+            return Stream.concat(preResult.stream(), otherTasks.stream())
+                    .distinct()
+                    .collect(Collectors.toList());
+        } else return preResult;
     }
 
+    /**
+     * Получить задачи компании, где текущий пользователь является исполнителем
+     */
     public List<TaskDto> getMyTasks(Long companyId) {
         Long actorId = securityFacadeApi.getCurrentUserId();
-        permissionApi.checkCompanyPermission(actorId, companyId, PermissionEnum.VIEW_TASK.name());
-
         List<Task> tasks = taskRepository.findAllByCompanyIdAndAssignedTo(companyId, actorId);
         return enrichTasksWithUsers(tasks);
     }
 
+    /**
+     * Получить задачи компании, которые текущий пользователь лично создал
+     */
     public List<TaskDto> getCreatedTasks(Long companyId) {
         Long actorId = securityFacadeApi.getCurrentUserId();
-        permissionApi.checkCompanyPermission(actorId, companyId, PermissionEnum.VIEW_TASK.name());
-
         List<Task> tasks = taskRepository.findAllByCompanyIdAndCreatedBy(companyId, actorId);
         return enrichTasksWithUsers(tasks);
     }
 
-    public List<TaskDto> getColumnTasks(Long columnId) {
-        BoardColumn column = columnRepository.findById(columnId)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Колонка не найдена"));
+    /**
+     * Получить задачи компании, которые не относятся к текущему пользователю
+     */
+    private List<TaskDto> getOtherTasks(Long companyId) {
 
-        permissionApi.checkCompanyPermission(
-                securityFacadeApi.getCurrentUserId(),
-                column.getBoard().getCompanyId(),
-                PermissionEnum.VIEW_TASK.name()
-        );
-
-        List<Task> tasks = taskRepository.findAllByColumnId(columnId);
+        try {
+            permissionApi.checkCompanyPermission(
+                    securityFacadeApi.getCurrentUserId(),
+                    companyId,
+                    PermissionEnum.VIEW_ALL_TASKS.name()
+            );
+        } catch (AccessDeniedException e)
+        {
+            return null;
+        }
+        List<Task> tasks = taskRepository.findAllByCompanyId(companyId);
         return enrichTasksWithUsers(tasks);
     }
 
@@ -98,13 +113,7 @@ public class TaskQueryService {
     // =========================
 
     public List<TaskCommentDto> getTaskComments(Long taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Задача не найдена"));
-
-        permissionApi.checkCanViewTask(securityFacadeApi.getCurrentUserId(), enrichTaskWithUsers(task, taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(task.getId()))));
-
         List<TaskComment> comments = commentRepository.findAllByTaskId(taskId);
-
         // Пакетная загрузка авторов комментариев
         Set<Long> userIds = comments.stream()
                 .map(TaskComment::getUserId)
@@ -144,7 +153,7 @@ public class TaskQueryService {
     // =========================
 
     public List<BoardDto> getBoards( Long companyId) {
-        permissionApi.checkCompanyPermission(securityFacadeApi.getCurrentUserId(), companyId, PermissionEnum.VIEW_TASK.name());
+        //permissionApi.checkCompanyPermission(securityFacadeApi.getCurrentUserId(), companyId, PermissionEnum.VIEW_TASK.name());
 
         return boardRepository.findAllByCompanyId(companyId)
                 .stream()
@@ -156,11 +165,11 @@ public class TaskQueryService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Доска не найдена"));
 
-        permissionApi.checkCompanyPermission(
+        /*permissionApi.checkCompanyPermission(
                 securityFacadeApi.getCurrentUserId(),
                 board.getCompanyId(),
                 PermissionEnum.VIEW_TASK.name()
-        );
+        );*/
 
         return mapBoard(board);
     }
@@ -236,8 +245,18 @@ public class TaskQueryService {
     private BoardDto mapBoard(Board board) {
         List<BoardColumn> columns = columnRepository
                 .findAllByBoardIdOrderByPositionAsc(board.getId());
-
-        List<Task> tasks = taskRepository.findAllByBoardId(board.getId());
+        Long actorId = securityFacadeApi.getCurrentUserId();
+        List<Task> tasks = List.of();
+        if (permissionApi.checkCanViewTasks(actorId, board.getCompanyId()))
+        {
+            tasks = taskRepository.findAllByBoardId(board.getId());
+        } else {
+            List<Task> myTasks = taskRepository.findAllByCompanyIdAndAssignedTo(board.getCompanyId(), actorId);
+            List<Task> createdTasks = taskRepository.findAllByCompanyIdAndCreatedBy(board.getCompanyId(), actorId);
+            tasks = Stream.concat(myTasks.stream(), createdTasks.stream())
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
 
         // Пакетное обогащение задач
         Set<Long> userIds = tasks.stream()

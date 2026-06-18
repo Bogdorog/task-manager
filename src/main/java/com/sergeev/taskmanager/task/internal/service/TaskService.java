@@ -15,7 +15,6 @@ import com.sergeev.taskmanager.task.internal.repository.BoardColumnRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskCommentRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskRepository;
 import com.sergeev.taskmanager.user.api.UserApi;
-import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -154,29 +153,10 @@ public class TaskService implements TaskApi {
     // =========================================================
     // ADD COMMENT
     // =========================================================
-
     @Override
     public TaskCommentDto addComment(AddCommentRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
-
-        UserShortDto assignedTo = userApi.getShortUserById(task.getAssignedTo());
-        UserShortDto createdBy = userApi.getShortUserById(task.getCreatedBy());
-        TaskDto taskDto = taskMapper.toDto(task, taskRepository.findCompanyIdByTaskId(request.taskId()));
-
-        permissionApi.checkCanViewTask(
-                actorId,
-                new TaskDto(taskDto.id(), taskDto.title(), taskDto.description(),
-                        taskDto.status(), taskDto.priority(), assignedTo, createdBy,
-                        taskDto.companyId(), taskDto.columnId(), taskDto.dueDate(),
-                        taskDto.createdAt(), taskDto.updatedAt())
-        );
-
-        permissionApi.checkCompanyPermission(
-                actorId,
-                taskDto.companyId(),
-                PermissionEnum.COMMENT_TASK.name()
-        );
 
         TaskComment comment = TaskComment.builder()
                 .taskId(task.getId())
