@@ -59,4 +59,10 @@ class UserController {
     public UserDto deleteAvatar() {
         return service.deleteAvatar();
     }
+
+    @DeleteMapping("/me")
+    @Operation(summary = "Запрос на удаление своего аккаунта")
+    public void deleteRequest() {
+        service.requestAccountDeletion();
+    }
 }

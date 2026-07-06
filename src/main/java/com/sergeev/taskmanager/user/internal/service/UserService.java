@@ -315,10 +315,16 @@ public class UserService implements UserApi {
 
     // Удаление аккаунта
     @Transactional
-    public void requestAccountDeletion(String login) {
+    public void requestAccountDeletion() {
 
-        User user = repository.findByLogin(login)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+        Long userId = securityFacade.getCurrentUserId();
+
+        User user = repository.findById(userId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Пользователь не найден"
+                        ));
 
         String token = accountDeleteService.generateToken();
 

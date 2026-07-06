@@ -1,21 +1,18 @@
 package com.sergeev.taskmanager.user.internal.controller;
 
-import com.sergeev.taskmanager.user.api.UserApi;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.request.LoginRequest;
 import com.sergeev.taskmanager.user.api.dto.request.PasswordResetConfirmRequest;
 import com.sergeev.taskmanager.user.api.dto.request.PasswordResetRequest;
 import com.sergeev.taskmanager.user.api.dto.request.RegisterUserRequest;
+import com.sergeev.taskmanager.user.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -25,10 +22,10 @@ import java.net.URI;
 @Tag(name = "Auth", description = "Авторизация и Регистрация")
 public class AuthController {
 
-    private final UserApi userApi;
+    private final UserService userService;
 
-    public AuthController(UserApi userApi) {
-        this.userApi = userApi;
+    public AuthController(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping("/register")
@@ -42,7 +39,7 @@ public class AuthController {
             description = "Ошибка на сервере."
     )
     public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest request) {
-        UserDto user = userApi.register(request);
+        UserDto user = userService.register(request);
         URI location= ServletUriComponentsBuilder.fromUriString("http://localhost:54455/api/user").path("/{login}").buildAndExpand(user.login()).toUri();
         return ResponseEntity.created(location).body("Пользователь успешно зарегистрирован.");
     }
@@ -59,18 +56,24 @@ public class AuthController {
             description = "Ошибка на сервере."
     )
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userApi.login(request));
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @PostMapping("/password/reset/request")
     @Operation(summary = "Запрос на смену пароля")
     public void requestReset(@RequestBody PasswordResetRequest request) {
-        userApi.initiatePasswordReset(request);
+        userService.initiatePasswordReset(request);
     }
 
     @PostMapping("/password/reset/confirm")
     @Operation(summary = "Смена пароля")
     public void confirmReset(@RequestBody PasswordResetConfirmRequest request) {
-        userApi.confirmPasswordReset(request);
+        userService.confirmPasswordReset(request);
+    }
+
+    @PostMapping("/account-delete/{token}")
+    @Operation(summary = "Удаление аккаунта")
+    public void confirmDelete(@PathVariable String token) {
+        userService.confirmAccountDeletion(token);
     }
 }
