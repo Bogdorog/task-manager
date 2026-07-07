@@ -1,6 +1,7 @@
 package com.sergeev.taskmanager.user.internal.controller;
 
 import com.sergeev.taskmanager.user.api.dto.UserDto;
+import com.sergeev.taskmanager.user.api.dto.request.ChangePasswordRequest;
 import com.sergeev.taskmanager.user.api.dto.request.UpdateProfileRequest;
 import com.sergeev.taskmanager.user.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,5 +65,11 @@ class UserController {
     @Operation(summary = "Запрос на удаление своего аккаунта")
     public void deleteRequest() {
         service.requestAccountDeletion();
+    }
+
+    @PostMapping("/me/change-password")
+    @Operation(summary = "Смена пароля в профиле")
+    public void changePassword(@RequestBody ChangePasswordRequest request) {
+        service.changePassword(request);
     }
 }

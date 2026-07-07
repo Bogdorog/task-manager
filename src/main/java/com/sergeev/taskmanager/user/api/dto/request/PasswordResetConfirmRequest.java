@@ -3,7 +3,7 @@ package com.sergeev.taskmanager.user.api.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-@Schema(description = "Смена пароля")
+@Schema(description = "Смена пароля через почту")
 public record PasswordResetConfirmRequest(
         @NotBlank()
         @Schema(description = "Токен пользователя")

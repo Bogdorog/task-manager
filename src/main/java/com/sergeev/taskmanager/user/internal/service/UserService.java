@@ -180,20 +180,24 @@ public class UserService implements UserApi {
         return user.getRole().getName();
     }
 
+
     //=============================
     // СМЕНА ПАРОЛЯ (в профиле и через почту)
     //=============================
-    // Можно на клиенте сделать два отдельных окна, тогда функции будет две - для проверки пароля и для смены
+    /**
+     * Смена пароля в профиле
+     * @param request Тело запроса с необходимыми параметрами (старый и новый пароль)
+     */
     @Transactional
-    public void changePassword(Long userId, String oldPassword, String newPassword) {
+    public void changePassword(ChangePasswordRequest request) {
 
-        User user = repository.findById(userId).orElseThrow();
+        User user = repository.findById(securityFacade.getCurrentUserId()).orElseThrow();
 
-        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Неверный пароль");
         }
 
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
     }
     // Смена через почту
     // Первый запрос о смене пароля
