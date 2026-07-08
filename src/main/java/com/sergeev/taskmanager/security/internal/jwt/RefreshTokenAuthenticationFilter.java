@@ -62,7 +62,7 @@ public class RefreshTokenAuthenticationFilter extends AbstractAuthenticationProc
         try {
             refreshTokenDto = JsonUtils.fromReader(request.getReader(), RefreshTokenDTO.class);
         } catch (Exception e) {
-            throw new AuthenticationServiceException("Invalid email request payload");
+            throw new AuthenticationServiceException("Некорректная почта");
         }
         return refreshTokenDto;
     }

@@ -1,5 +1,6 @@
 package com.sergeev.taskmanager.user.internal.controller;
 
+import com.sergeev.taskmanager.exception.dto.ErrorResponse;
 import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.request.LoginRequest;
 import com.sergeev.taskmanager.user.api.dto.request.PasswordResetConfirmRequest;
@@ -8,6 +9,7 @@ import com.sergeev.taskmanager.user.api.dto.request.RegisterUserRequest;
 import com.sergeev.taskmanager.user.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,7 +38,9 @@ public class AuthController {
     )
     @ApiResponse(
             responseCode = "500",
-            description = "Ошибка на сервере."
+            description = "Ошибка на сервере.",
+            content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) }
     )
     public ResponseEntity<?> register(@Valid @RequestBody RegisterUserRequest request) {
         UserDto user = userService.register(request);
@@ -49,13 +53,16 @@ public class AuthController {
     @ApiResponse(
             responseCode = "200",
             description = "Вход прошел успешно.",
-            content = @Content(mediaType = "application/json")
+            content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = UserDto.class)) }
     )
     @ApiResponse(
             responseCode = "500",
-            description = "Ошибка на сервере."
+            description = "Ошибка на сервере.",
+            content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) }
     )
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(userService.login(request));
     }
 

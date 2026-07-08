@@ -5,6 +5,7 @@ import com.sergeev.taskmanager.user.api.dto.request.ChangePasswordRequest;
 import com.sergeev.taskmanager.user.api.dto.request.UpdateProfileRequest;
 import com.sergeev.taskmanager.user.internal.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -27,7 +28,7 @@ class UserController {
 
     @GetMapping("/{login}")
     @Operation(summary = "Получить информацию о другом пользователе")
-    public UserDto get(@PathVariable String login) {
+    public UserDto get(@Parameter(description = "Логин пользователя") @PathVariable String login) {
         return service.getUser(login);
     }
 
@@ -44,14 +45,9 @@ class UserController {
     }
 
     @Operation(summary = "Изменить свой аватар")
-    @PutMapping(
-            value = "/me/avatar",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public UserDto uploadAvatar(
-            @RequestPart("file") MultipartFile file
-    ) {
-
+    @PutMapping(value = "/me/avatar",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UserDto uploadAvatar(@RequestPart("file") MultipartFile file) {
         return service.uploadAvatar(file);
     }
 

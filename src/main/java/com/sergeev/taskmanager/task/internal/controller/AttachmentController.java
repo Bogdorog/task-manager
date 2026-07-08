@@ -2,6 +2,7 @@ package com.sergeev.taskmanager.task.internal.controller;
 
 import com.sergeev.taskmanager.task.api.dto.AttachmentDto;
 import com.sergeev.taskmanager.task.internal.service.TaskAttachmentService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,94 +21,63 @@ public class AttachmentController {
 
     private final TaskAttachmentService attachmentService;
 
-    /**
-     * Загрузить вложение в задачу
-     */
-    @PostMapping(
-            value = "/tasks/{taskId}",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(value = "/tasks/{taskId}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Добавить вложение к задаче")
     public AttachmentDto uploadTaskAttachment(
             @PathVariable Long taskId,
-            @RequestPart("file") MultipartFile file
-    ) {
-
+            @RequestPart("file") MultipartFile file) {
         return attachmentService.uploadTaskAttachment(
                 taskId,
                 file
         );
     }
 
-    /**
-     * Получить вложения задачи
-     */
     @GetMapping("/tasks/{taskId}")
-    public List<AttachmentDto> getTaskAttachments(
-            @PathVariable Long taskId
-    ) {
-
+    @Operation(summary = "Получить вложения задачи")
+    public List<AttachmentDto> getTaskAttachments(@PathVariable Long taskId) {
         return attachmentService.getTaskAttachments(
                 taskId
         );
     }
 
-    /**
-     * Удалить вложение задачи
-     */
     @DeleteMapping("/tasks/{attachmentId}")
+    @Operation(summary = "Удалить вложение задачи")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTaskAttachment(
-            @PathVariable Long attachmentId
-    ) {
-
+    public void deleteTaskAttachment(@PathVariable Long attachmentId) {
         attachmentService.deleteTaskAttachment(
                 attachmentId
         );
     }
 
-    /**
-     * Загрузить вложение в комментарий
-     */
-    @PostMapping(
-            value = "/comments/{commentId}",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(value = "/comments/{commentId}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Добавить вложение к комментарию")
     public AttachmentDto uploadCommentAttachment(
             @PathVariable Long commentId,
-            @RequestPart("file") MultipartFile file
-    ) {
-
+            @RequestPart("file") MultipartFile file) {
         return attachmentService.uploadCommentAttachment(
                 commentId,
                 file
         );
     }
 
-    /**
-     * Получить вложения комментария
-     */
     @GetMapping("/comments/{commentId}")
+    @Operation(summary = "Получить вложения комментария")
     public List<AttachmentDto> getCommentAttachments(
             @PathVariable Long commentId
     ) {
-
         return attachmentService.getCommentAttachments(
                 commentId
         );
     }
 
-    /**
-     * Удалить вложение комментария
-     */
-    @DeleteMapping(
-            "/comments/{commentId}/{mediaAssetId}"
-    )
+    @DeleteMapping("/comments/{commentId}/{mediaAssetId}")
+    @Operation(summary = "Удалить вложение комментария")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCommentAttachment(
             @PathVariable Long commentId,
-            @PathVariable UUID mediaAssetId
-    ) {
-
+            @PathVariable UUID mediaAssetId) {
         attachmentService.deleteCommentAttachment(
                 commentId,
                 mediaAssetId

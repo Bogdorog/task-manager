@@ -75,11 +75,11 @@ public class JwtTokenProvider {
     @Transactional
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token not found"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Токен обновления не найден"));
 
         if (refreshToken.isExpired()) {
             refreshTokenRepository.delete(refreshToken);
-            throw new InvalidRefreshTokenException("Refresh token expired");
+            throw new InvalidRefreshTokenException("Токен обновления просрочен");
         }
 
         return refreshToken;
@@ -88,6 +88,6 @@ public class JwtTokenProvider {
     @Transactional
     public void revokeRefreshToken(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
-        log.info("Refresh token revoked for user {}", userId);
+        log.info("Отозван токен обновления для пользователя {}", userId);
     }
 }

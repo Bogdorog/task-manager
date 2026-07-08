@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -81,6 +82,7 @@ public class GlobalExceptionHandler {
 
     // Обработка ошибок валидации (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
@@ -124,8 +126,8 @@ public class GlobalExceptionHandler {
     }
 
     // Обработка других общих исключений
-    @ExceptionHandler({Exception.class})
-    public ResponseEntity<ErrorResponse> handleInternalError(RuntimeException ex,
+    @ExceptionHandler({RuntimeException.class, Exception.class})
+    public ResponseEntity<ErrorResponse> handleInternalError(Exception ex,
                                                              HttpServletRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 LocalDateTime.now(),

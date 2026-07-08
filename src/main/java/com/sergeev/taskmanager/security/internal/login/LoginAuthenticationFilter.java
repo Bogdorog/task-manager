@@ -50,7 +50,7 @@ public class LoginAuthenticationFilter extends AbstractAuthenticationProcessingF
         try {
             loginRequest = JsonUtils.fromReader(request.getReader(), LoginRequest.class);
         } catch (Exception e) {
-            throw new AuthenticationServiceException("Invalid login request payload");
+            throw new AuthenticationServiceException("Некорректный логин");
         }
 
         if (StringUtils.isBlank(Objects.requireNonNull(loginRequest).login()) || StringUtils.isBlank(loginRequest.password())) {

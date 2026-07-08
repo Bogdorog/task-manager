@@ -24,8 +24,8 @@ public class CompanyController {
     private final CompanyService service;
     private final SecurityFacadeApi security;
 
-    // CREATE COMPANY
     @PostMapping
+    @Operation(summary = "Создать компанию")
     public CompanyDto create(@Valid @RequestBody CreateCompanyRequest request) {
         return service.createCompany(
                 security.getCurrentUserId(),
@@ -33,13 +33,14 @@ public class CompanyController {
         );
     }
 
-    // GET COMPANY
     @GetMapping("/{companyId}")
+    @Operation(summary = "Получить информацию о компании")
     public CompanyDto get(@PathVariable Long companyId) {
         return service.getCompany(companyId);
     }
 
     @GetMapping("/my")
+    @Operation(summary = "Получить информацию о собственных компаниях")
     public List<CompanyDto> getMyCompanies() {
 
         return service.getMyCompanies(
@@ -47,8 +48,8 @@ public class CompanyController {
         );
     }
 
-    // UPDATE COMPANY
     @PutMapping("/{companyId}")
+    @Operation(summary = "Обновить информацию о компании")
     public CompanyDto update(
             @PathVariable Long companyId,
             @Valid @RequestBody CreateCompanyRequest request
@@ -60,14 +61,14 @@ public class CompanyController {
         );
     }
 
-    // DELETE COMPANY
     @DeleteMapping("/{companyId}")
+    @Operation(summary = "Удалить компанию")
     public void delete(@RequestBody DeleteCompanyRequest request) {
         service.deleteCompany(request);
     }
 
-    // INVITE USER
     @PostMapping("/{companyId}/members")
+    @Operation(summary = "Добавить сотрудника в компанию")
     public void inviteUser(
             @PathVariable Long companyId,
             @RequestBody InviteUserRequest request
@@ -80,8 +81,8 @@ public class CompanyController {
         membershipService.inviteUser(updatedRequest);
     }
 
-    // GET MEMBERS
     @GetMapping("/{companyId}/members")
+    @Operation(summary = "Получить информацию о компании")
     public List<CompanyMembershipDto> getMembers(@PathVariable Long companyId) {
         return membershipService.getMembers(
                 companyId,
@@ -89,10 +90,8 @@ public class CompanyController {
         );
     }
 
-    /**
-     *  Получение списка сотрудников для отображения в окнах выбора
-     */
     @GetMapping("/{companyId}/members/short")
+    @Operation(summary = "Получить список сотрудников для отображения в окнах выбора")
     public List<ShortCompanyMembershipDto> getShortMembers(@PathVariable Long companyId) {
         return membershipService.getShortMembers(
                 companyId,
@@ -100,10 +99,8 @@ public class CompanyController {
         );
     }
 
-    /**
-     *  Запрос на увольнение сотрудника
-     */
     @DeleteMapping("/{companyId}/members/{membershipId}")
+    @Operation(summary = "Удалить сотрудника из компании")
     public void removeUser(@PathVariable Long companyId,
                            @PathVariable Long membershipId) throws BusinessRuleException {
         DeleteMemberRequest request =
@@ -113,10 +110,8 @@ public class CompanyController {
         membershipService.removeUser(request);
     }
 
-    /**
-     *  Запрос на покидание компании
-     */
     @DeleteMapping("/{companyId}/leave")
+    @Operation(summary = "Покинуть компанию")
     public void leave(@PathVariable Long companyId) throws BusinessRuleException {
         LeaveCompanyRequest request =
                 new LeaveCompanyRequest(
@@ -124,10 +119,8 @@ public class CompanyController {
         membershipService.leaveCompany(request);
     }
 
-    /**
-     * Запрос на просмотр ролей
-     */
     @GetMapping("/{companyId}/roles")
+    @Operation(summary = "Получить инфомацию о ролях компании")
     public List<CompanyRoleDto> getRoles(@PathVariable Long companyId) {
         return roleService.getRoles(
                 companyId,
@@ -135,10 +128,8 @@ public class CompanyController {
         );
     }
 
-    /**
-     * Запрос на создание роли
-     */
     @PostMapping("/{companyId}/roles")
+    @Operation(summary = "Добавить роль в компанию")
     public void createRole(
             @PathVariable Long companyId,
             @RequestBody RoleRequest request
@@ -146,10 +137,8 @@ public class CompanyController {
         roleService.createRole(request);
     }
 
-    /**
-     * Запрос на редактирование роли
-     */
     @PutMapping("/{companyId}/role/{roleId}")
+    @Operation(summary = "Изменить роль компании")
     public void updateRole(
             @PathVariable Long roleId,
             @RequestBody RoleRequest request
@@ -157,10 +146,8 @@ public class CompanyController {
         roleService.updateRole(roleId, request);
     }
 
-    /**
-     * Запрос на удаление роли
-     */
     @DeleteMapping("/{companyId}/roles/{roleId}")
+    @Operation(summary = "Удалить роль компании")
     public void deleteRole(
             @PathVariable Long companyId,
             @PathVariable Long roleId
@@ -172,10 +159,8 @@ public class CompanyController {
         roleService.deleteRole(request);
     }
 
-    /**
-     *  Запрос на назначение сотруднику новой роли
-     */
     @PutMapping("/{companyId}/members/{membershipId}/role")
+    @Operation(summary = "Назначить сотруднику новую роль")
     public void assignRole(
             @PathVariable Long companyId,
             @PathVariable Long membershipId,
@@ -189,10 +174,8 @@ public class CompanyController {
         roleService.assignRole(updatedRequest);
     }
 
-    // =========================
-    // TRANSFER OWNER
-    // =========================
     @PutMapping("/{companyId}/transfer-owner/{userId}")
+    @Operation(summary = "Назначить нового владельца компании компании")
     public void transferOwner(
             @PathVariable Long companyId,
             @PathVariable Long userId,
@@ -207,7 +190,7 @@ public class CompanyController {
     }
 
     @GetMapping("/{companyId}/permissions/me")
-    @Operation(summary = "Возможности пользователя")
+    @Operation(summary = "Получить список разрешенных действий сотрудника компании")
     public CompanyPermissionsDto getMyPermissions(
             @PathVariable Long companyId
     ) {
