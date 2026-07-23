@@ -2,6 +2,7 @@ package com.sergeev.taskmanager.exception;
 
 import com.sergeev.taskmanager.exception.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -18,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -126,7 +128,7 @@ public class GlobalExceptionHandler {
     }
 
     // Обработка других общих исключений
-    @ExceptionHandler({RuntimeException.class, Exception.class})
+    @ExceptionHandler({Exception.class})
     public ResponseEntity<ErrorResponse> handleInternalError(Exception ex,
                                                              HttpServletRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
@@ -137,6 +139,13 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Обработка исключения на случай падения SSE
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public void handleAsyncRequestTimeout(AsyncRequestTimeoutException ex, HttpServletRequest request) {
+        log.debug("Async request timeout: {}", request.getRequestURI());
+        // намеренно ничего не возвращаем
     }
 
     private String extractDuplicateFieldMessage(Throwable ex) {

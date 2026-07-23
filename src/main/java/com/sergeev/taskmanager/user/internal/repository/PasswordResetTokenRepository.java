@@ -19,7 +19,7 @@ public interface PasswordResetTokenRepository
        where t.used = true
           or t.expiresAt < :now
        """)
-    void deleteExpiredOrUsed(LocalDateTime now);
+    int deleteExpiredOrUsed(LocalDateTime now);
 
     @Modifying
     @Query("""

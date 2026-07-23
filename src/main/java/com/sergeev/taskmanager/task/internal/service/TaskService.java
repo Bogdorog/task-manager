@@ -14,7 +14,6 @@ import com.sergeev.taskmanager.task.internal.mapper.TaskMapper;
 import com.sergeev.taskmanager.task.internal.repository.BoardColumnRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskCommentRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskRepository;
-import com.sergeev.taskmanager.user.api.UserApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,6 @@ public class TaskService implements TaskApi {
 
     private final TaskRepository taskRepository;
     private final TaskCommentRepository commentRepository;
-    private final UserApi userApi;
     private final BoardColumnRepository columnRepository;
     private final CompanyMembershipRepository membershipRepository;
     private final CheckPermissionApi permissionApi;
@@ -399,6 +397,8 @@ public class TaskService implements TaskApi {
         );
 
         task.setDueDate(request.dueDate());
+        task.setDeadlineWarningSent(false);
+        task.setDeadlineOverdueSent(false);
     }
 
     private void changeStatus(Task task,

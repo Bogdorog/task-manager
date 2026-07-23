@@ -246,12 +246,7 @@ public class TaskController {
         boardService.deleteColumn(columnId);
     }
 
-    // =========================================================
-    // TASK MOVE
-    // =========================================================
-    /**
-    Перемещение задачи между колонками
-     */
+    // Перемещение задачи между колонками
     @PatchMapping("/{taskId}/move")
     public void moveTask(
             @PathVariable Long taskId,

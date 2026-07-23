@@ -1,10 +1,13 @@
 package com.sergeev.taskmanager.task.internal.repository;
 
 import com.sergeev.taskmanager.task.internal.entity.Task;
+import com.sergeev.taskmanager.task.internal.entity.TaskStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 // TODO Удалить Query запросы связанные с CompanyId, изменить логику в сервисах
 public interface TaskRepository extends JpaRepository<Task, Long> {
@@ -22,7 +25,26 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findAllByCompanyIdAndCreatedBy(@Param("companyId") Long companyId,
                                               @Param("createdBy") Long createdBy);
 
-    List<Task> findAllByColumnId(Long columnId);
+    @Query("""
+        select t from Task t
+        where t.dueDate between :now and :threshold
+          and t.deadlineWarningSent = false
+          and t.status not in :excludedStatuses
+        """)
+    List<Task> findApproachingDeadline(
+            @Param("now") LocalDateTime now,
+            @Param("threshold") LocalDateTime threshold,
+            @Param("excludedStatuses") Collection<TaskStatus> excludedStatuses);
+
+    @Query("""
+        select t from Task t
+        where t.dueDate < :now
+          and t.deadlineOverdueSent = false
+          and t.status not in :excludedStatuses
+        """)
+    List<Task> findOverdue(
+            @Param("now") LocalDateTime now,
+            @Param("excludedStatuses") Collection<TaskStatus> excludedStatuses);
 
     List<Task> findAllByBoardId(Long boardId);
 

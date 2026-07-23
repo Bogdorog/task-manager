@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info = @Info(
                 title = "Task Manager Platform API",
-                version = "1.0.0",
+                version = "1.0.1",
                 description = "Документация REST API платформы Task Manager",
                 license = @License(name = "MIT", url = "https://github.com/Bogdorog/task-manager?tab=MIT-1-ov-file")
         )

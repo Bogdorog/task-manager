@@ -6,6 +6,7 @@ import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.dto.BoardColumnDto;
 import com.sergeev.taskmanager.task.api.dto.BoardDto;
 import com.sergeev.taskmanager.task.api.dto.request.*;
+import com.sergeev.taskmanager.task.api.event.TaskMovedEvent;
 import com.sergeev.taskmanager.task.internal.entity.Board;
 import com.sergeev.taskmanager.task.internal.entity.BoardColumn;
 import com.sergeev.taskmanager.task.internal.entity.Task;
@@ -15,6 +16,7 @@ import com.sergeev.taskmanager.task.internal.repository.BoardColumnRepository;
 import com.sergeev.taskmanager.task.internal.repository.BoardRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,7 @@ public class BoardService {
     private final BoardMapper boardMapper;
     private final BoardColumnMapper columnMapper;
     private final SecurityFacadeApi securityFacade;
+    private final ApplicationEventPublisher publisher;
 
     // =========================================================
     // BOARD
@@ -229,15 +232,27 @@ public class BoardService {
                 getColumn(task.getColumnId()),
                 targetColumn
         );
-
+        Long actorId = securityFacade.getCurrentUserId();
         permissionApi.checkCompanyPermission(
-                securityFacade.getCurrentUserId(),
+                actorId,
                 taskRepository.findCompanyIdByTaskId(request.taskId()),
                 PermissionEnum.UPDATE_TASK.name()
         );
 
         task.setColumnId(targetColumn.getId());
         task.setUpdatedAt(LocalDateTime.now());
+        publisher.publishEvent(new TaskMovedEvent(
+                task.getId(),
+                task.getTitle(),
+                targetColumn.getBoard().getId(),
+                task.getColumnId(),
+                getColumn(task.getColumnId()).getName(),
+                targetColumn.getId(),
+                targetColumn.getName(),
+                securityFacade.getCurrentUserId(),
+                task.getCreatedBy(),
+                task.getAssignedTo() != null ? task.getAssignedTo() : null
+        ));
     }
 
     // =========================================================
