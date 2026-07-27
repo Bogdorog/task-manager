@@ -1,7 +1,7 @@
 package com.sergeev.taskmanager.task.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.media.api.MediaApi;
 import com.sergeev.taskmanager.media.api.dto.MediaAssetDto;
 import com.sergeev.taskmanager.security.internal.utils.SecurityFacade;

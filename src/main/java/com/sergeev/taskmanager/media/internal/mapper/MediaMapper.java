@@ -7,7 +7,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface MediaMapper {
-    MediaAsset toEntity(MediaAssetDto dto);
     @Mapping(target = "downloadUrl", source = "downloadUrl")
     @Mapping(target = "fileName", expression = "java(entity.getOriginalName())")
     MediaAssetDto toDto(MediaAsset entity, String downloadUrl);

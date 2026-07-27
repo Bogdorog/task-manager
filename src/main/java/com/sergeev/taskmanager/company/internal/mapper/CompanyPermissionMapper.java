@@ -1,7 +1,7 @@
 package com.sergeev.taskmanager.company.internal.mapper;
 
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.api.dto.CompanyPermissionsDto;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;

@@ -1,13 +1,15 @@
 package com.sergeev.taskmanager.task.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.TaskApi;
 import com.sergeev.taskmanager.task.api.dto.TaskCommentDto;
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 import com.sergeev.taskmanager.task.api.dto.request.*;
+import com.sergeev.taskmanager.task.api.event.TaskAssignedEvent;
+import com.sergeev.taskmanager.task.api.event.TaskUpdatedEvent;
 import com.sergeev.taskmanager.task.internal.entity.*;
 import com.sergeev.taskmanager.task.internal.mapper.TaskCommentMapper;
 import com.sergeev.taskmanager.task.internal.mapper.TaskMapper;
@@ -15,6 +17,7 @@ import com.sergeev.taskmanager.task.internal.repository.BoardColumnRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskCommentRepository;
 import com.sergeev.taskmanager.task.internal.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,10 +40,7 @@ public class TaskService implements TaskApi {
     private final TaskMapper taskMapper;
     private final TaskCommentMapper commentMapper;
     private final SecurityFacadeApi securityFacade;
-
-    // =========================================================
-    // CREATE TASK
-    // =========================================================
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public TaskDto createTask(CreateTaskRequest request) {
@@ -70,11 +70,6 @@ public class TaskService implements TaskApi {
                 request.companyId()
         );
 
-        /*Integer nextPosition =
-                taskRepository.getNextPositionInColumn(
-                        column.getId()
-                );*/
-
         Task task = Task.builder()
                 .title(request.title())
                 .description(request.description())
@@ -88,7 +83,7 @@ public class TaskService implements TaskApi {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        taskRepository.save(task);
+        task = taskRepository.save(task);
 
         historyService.record(
                 task,
@@ -115,14 +110,22 @@ public class TaskService implements TaskApi {
                     null,
                     request.assignedUserId().toString()
             );
+
+            if (!request.assignedUserId().equals(actorId))
+            {
+                eventPublisher.publishEvent(new TaskAssignedEvent(
+                        task.getId(),
+                        task.getTitle(),
+                        task.getBoardId(),
+                        request.companyId(),
+                        actorId,
+                        request.assignedUserId()
+                ));
+            }
         }
 
         return taskMapper.toDto(task, request.companyId());
     }
-
-    // =========================================================
-    // UPDATE TASK
-    // =========================================================
 
     @Override
     public TaskDto updateTask(UpdateTaskRequest request) {
@@ -135,22 +138,32 @@ public class TaskService implements TaskApi {
                 companyId,
                 PermissionEnum.UPDATE_TASK.name()
         );
+        // Если задача меняется, флаг поднимается и мы отправляем уведомление
+        int taskChangedFlag = 0;
+        taskChangedFlag += updateTitle(task, actorId, request);
+        taskChangedFlag += updateDescription(task, actorId, request);
+        taskChangedFlag += updatePriority(task, actorId, request);
+        taskChangedFlag += updateDueDate(task, actorId, request);
+        taskChangedFlag += changeStatus(task, actorId, request);
 
-        updateTitle(task, actorId, request);
-        updateDescription(task, actorId, request);
-        updatePriority(task, actorId, request);
-        updateDueDate(task, actorId, request);
-        changeStatus(task, actorId, request);
-        assignTask(task, actorId, request);
-
+        if (taskChangedFlag > 0)
+        {
+            eventPublisher.publishEvent(new TaskUpdatedEvent(
+                    task.getId(),
+                    task.getTitle(),
+                    task.getBoardId(),
+                    companyId,
+                    actorId,
+                    task.getCreatedBy(),
+                    request.assignedToId()
+            ));
+        }
+        assignTask(task, actorId, companyId, request);
         task.setUpdatedAt(LocalDateTime.now());
 
         return taskMapper.toDto(task, companyId);
     }
 
-    // =========================================================
-    // ADD COMMENT
-    // =========================================================
     @Override
     public TaskCommentDto addComment(AddCommentRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
@@ -175,10 +188,6 @@ public class TaskService implements TaskApi {
 
         return commentMapper.toDto(comment);
     }
-
-    // =========================================================
-    // DELETE COMMENT
-    // =========================================================
 
     @Override
     public void deleteComment(DeleteCommentRequest request) {
@@ -224,18 +233,15 @@ public class TaskService implements TaskApi {
         );
     }
 
-    // =========================================================
-    // DELETE TASK
-    // =========================================================
-
     @Override
     public void deleteTask(DeleteTaskRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
         Task task = getTask(request.taskId());
+        Long companyId = taskRepository.findCompanyIdByTaskId(request.taskId());
 
         permissionApi.checkCompanyPermission(
                 actorId,
-                taskRepository.findCompanyIdByTaskId(request.taskId()),
+                companyId,
                 PermissionEnum.DELETE_TASK.name()
         );
 
@@ -248,6 +254,15 @@ public class TaskService implements TaskApi {
         );
 
         taskRepository.delete(task);
+        eventPublisher.publishEvent(new TaskUpdatedEvent(
+                task.getId(),
+                task.getTitle(),
+                task.getBoardId(),
+                companyId,
+                actorId,
+                task.getCreatedBy(),
+                task.getAssignedTo()
+        ));
     }
 
     // =========================================================
@@ -305,7 +320,7 @@ public class TaskService implements TaskApi {
         }
     }
 
-    private void updateTitle(
+    private int updateTitle(
             Task task,
             Long actorId,
             UpdateTaskRequest request
@@ -314,7 +329,7 @@ public class TaskService implements TaskApi {
                 task.getTitle(),
                 request.title()
         )) {
-            return;
+            return 0;
         }
 
         historyService.record(
@@ -326,9 +341,10 @@ public class TaskService implements TaskApi {
         );
 
         task.setTitle(request.title());
+        return 1;
     }
 
-    private void updateDescription(
+    private int updateDescription(
             Task task,
             Long actorId,
             UpdateTaskRequest request
@@ -337,7 +353,7 @@ public class TaskService implements TaskApi {
                 task.getDescription(),
                 request.description()
         )) {
-            return;
+            return 0;
         }
 
         historyService.record(
@@ -349,15 +365,16 @@ public class TaskService implements TaskApi {
         );
 
         task.setDescription(request.description());
+        return 1;
     }
 
-    private void updatePriority(
+    private int updatePriority(
             Task task,
             Long actorId,
             UpdateTaskRequest request
     ) {
         if (task.getPriority() == request.priority()) {
-            return;
+            return 0;
         }
 
         historyService.record(
@@ -369,9 +386,10 @@ public class TaskService implements TaskApi {
         );
 
         task.setPriority(request.priority());
+        return 1;
     }
 
-    private void updateDueDate(
+    private int updateDueDate(
             Task task,
             Long actorId,
             UpdateTaskRequest request
@@ -381,7 +399,7 @@ public class TaskService implements TaskApi {
                 task.getDueDate(),
                 request.dueDate()
         )) {
-            return;
+            return 0;
         }
 
         historyService.record(
@@ -399,16 +417,17 @@ public class TaskService implements TaskApi {
         task.setDueDate(request.dueDate());
         task.setDeadlineWarningSent(false);
         task.setDeadlineOverdueSent(false);
+        return 1;
     }
 
-    private void changeStatus(Task task,
+    private int changeStatus(Task task,
                               Long actorId,
                               UpdateTaskRequest request) {
         if (Objects.equals(
                 task.getStatus().name(),
                 request.status().name()
         )) {
-            return;
+            return 0;
         }
 
         historyService.record(
@@ -420,18 +439,22 @@ public class TaskService implements TaskApi {
         );
 
         task.setStatus(request.status());
+        return 1;
     }
 
     private void assignTask(Task task,
                             Long actorId,
+                            Long companyId,
                             UpdateTaskRequest request) {
+
+        Long oldAssigned = task.getAssignedTo();
+        // Если ответственный не изменяется, ничего не делаем
+        if (oldAssigned.equals(request.assignedToId())) return;
 
         validateMembershipIfAssigned(
                 request.assignedToId(),
-                taskRepository.findCompanyIdByTaskId(request.taskId())
+                companyId
         );
-
-        Long oldAssigned = task.getAssignedTo();
 
         historyService.record(
                 task,
@@ -446,6 +469,14 @@ public class TaskService implements TaskApi {
         );
 
         task.setAssignedTo(request.assignedToId());
+        eventPublisher.publishEvent(new TaskAssignedEvent(
+                task.getId(),
+                task.getTitle(),
+                task.getBoardId(),
+                companyId,
+                actorId,
+                request.assignedToId()
+        ));
     }
 
     private String truncateComment(String text) {

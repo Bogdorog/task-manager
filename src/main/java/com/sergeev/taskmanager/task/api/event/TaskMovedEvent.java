@@ -3,6 +3,7 @@ package com.sergeev.taskmanager.task.api.event;
 public record TaskMovedEvent(
         Long taskId,
         String taskTitle,
+        Long companyId,
         Long boardId,
         Long fromColumnId,
         String fromColumnName,

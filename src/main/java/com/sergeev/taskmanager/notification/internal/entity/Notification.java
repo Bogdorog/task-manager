@@ -27,6 +27,9 @@ public class Notification {
     @Column(nullable = false)
     private String type;
 
+    @Column(name = "company_id")
+    private Long companyId;
+
     // JSON в текстовом виде
     @Column(columnDefinition = "TEXT", nullable = false)
     private String payload;

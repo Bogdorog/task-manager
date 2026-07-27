@@ -2,6 +2,7 @@ package com.sergeev.taskmanager.notification.internal.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sergeev.taskmanager.company.api.CompanyApi;
 import com.sergeev.taskmanager.notification.api.dto.NotificationEventDto;
 import com.sergeev.taskmanager.notification.internal.entity.Notification;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class NotificationMapper {
 
     private final ObjectMapper objectMapper;
+    private final CompanyApi companyApi;
 
     public String serializePayload(Object payload) {
         try {
@@ -26,6 +28,7 @@ public class NotificationMapper {
         return new NotificationEventDto(
                 notification.getId(),
                 notification.getType(),
+                companyApi.getCompanyNameById(notification.getCompanyId()),
                 deserializePayload(notification.getPayload()),
                 notification.getCreatedAt(),
                 notification.getReadAt() != null

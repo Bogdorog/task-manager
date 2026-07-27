@@ -7,6 +7,8 @@ import com.sergeev.taskmanager.task.api.dto.request.*;
 import com.sergeev.taskmanager.task.internal.service.BoardService;
 import com.sergeev.taskmanager.task.internal.service.TaskQueryService;
 import com.sergeev.taskmanager.task.internal.service.TaskService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tasks")
 @RequiredArgsConstructor
+@Tag(name = "Task", description = "Доски и задачи")
 public class TaskController {
 
     private final TaskService commandService;
@@ -22,10 +25,11 @@ public class TaskController {
     private final BoardService boardService;
 
     // =========================================================
-    // TASK COMMANDS
+    // Управление задачей
     // =========================================================
 
     @PostMapping
+    @Operation(summary = "Создание задачи")
     public TaskDto createTask(
             @RequestBody CreateTaskRequest request
     ) {
@@ -52,6 +56,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{taskId}")
+    @Operation(summary = "Удаление задачи")
     public void deleteTask(
             @PathVariable Long taskId
     ) {
@@ -62,11 +67,28 @@ public class TaskController {
         commandService.deleteTask(updatedRequest);
     }
 
+    @PatchMapping("/{taskId}/move")
+    @Operation(summary = "Перемещение задачи между колонками")
+    public void moveTask(
+            @PathVariable Long taskId,
+            @RequestBody MoveTaskRequest request
+    ) {
+
+        MoveTaskRequest updatedRequest =
+                new MoveTaskRequest(
+                        taskId,
+                        request.newColumnId()
+                );
+
+        boardService.moveTask(updatedRequest);
+    }
+
     // =========================================================
-    // COMMENTS
+    // Управление комментарием
     // =========================================================
 
     @PostMapping("/{taskId}/comments")
+    @Operation(summary = "Создание комментария")
     public TaskCommentDto addComment(
             @PathVariable Long taskId,
             @RequestBody AddCommentRequest request
@@ -81,6 +103,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{taskId}/comments/{commentId}")
+    @Operation(summary = "Удаление комментария")
     public void deleteComment(
             @PathVariable Long commentId
     ) {
@@ -94,10 +117,11 @@ public class TaskController {
     }
 
     // =========================================================
-    // TASK QUERIES
+    // Различные списки задач
     // =========================================================
 
     @GetMapping("/{taskId}")
+    @Operation(summary = "Получение одной задачи")
     public TaskDto getTask(
             @PathVariable Long taskId
     ) {
@@ -105,6 +129,7 @@ public class TaskController {
     }
 
     @GetMapping("/company/{companyId}")
+    @Operation(summary = "Получение всех задач компании")
     public List<TaskDto> getCompanyTasks(
             @PathVariable Long companyId
     ) {
@@ -112,6 +137,7 @@ public class TaskController {
     }
 
     @GetMapping("/company/{companyId}/my")
+    @Operation(summary = "Получение всех задач, где пользователь исполнитель")
     public List<TaskDto> getMyTasks(
             @PathVariable Long companyId
     ) {
@@ -119,6 +145,7 @@ public class TaskController {
     }
 
     @GetMapping("/company/{companyId}/created")
+    @Operation(summary = "Получение всех задач, где пользователь создатель")
     public List<TaskDto> getCreatedTasks(
             @PathVariable Long companyId
     ) {
@@ -126,6 +153,7 @@ public class TaskController {
     }
 
     @GetMapping("/{taskId}/comments")
+    @Operation(summary = "Получение всех комментариев задачи")
     public List<TaskCommentDto> getComments(
             @PathVariable Long taskId
     ) {
@@ -133,6 +161,7 @@ public class TaskController {
     }
 
     @GetMapping("/{taskId}/history")
+    @Operation(summary = "Получение истории изменения задачи")
     public List<?> getTaskHistory(
             @PathVariable Long taskId
     ) {
@@ -140,10 +169,11 @@ public class TaskController {
     }
 
     // =========================================================
-    // BOARDS
+    // Управление досками
     // =========================================================
 
     @PostMapping("/boards")
+    @Operation(summary = "Создание доски")
     public BoardDto createBoard(
             @RequestBody CreateBoardRequest request
     ) {
@@ -151,6 +181,7 @@ public class TaskController {
     }
 
     @PutMapping("/boards/{boardId}")
+    @Operation(summary = "Изменение доски")
     public BoardDto updateBoard(
             @PathVariable Long boardId,
             @RequestBody UpdateBoardRequest request
@@ -167,6 +198,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/boards/{boardId}")
+    @Operation(summary = "Удаление доски")
     public void deleteBoard(
             @PathVariable Long boardId
     ) {
@@ -174,6 +206,7 @@ public class TaskController {
     }
 
     @GetMapping("/boards/company/{companyId}")
+    @Operation(summary = "Получить список досок компании")
     public List<BoardDto> getBoards(
             @PathVariable Long companyId
     ) {
@@ -181,6 +214,7 @@ public class TaskController {
     }
 
     @GetMapping("/boards/{boardId}")
+    @Operation(summary = "Получить доску")
     public BoardDto getBoard(
             @PathVariable Long boardId
     ) {
@@ -188,10 +222,11 @@ public class TaskController {
     }
 
     // =========================================================
-    // COLUMNS
+    // Управление столбцами
     // =========================================================
 
     @PostMapping("/boards/{boardId}/columns")
+    @Operation(summary = "Создание столбца на доске")
     public void createColumn(
             @PathVariable Long boardId,
             @RequestBody CreateColumnRequest request
@@ -207,6 +242,7 @@ public class TaskController {
     }
 
     @PutMapping("/boards/{boardId}/columns/{columnId}")
+    @Operation(summary = "Изменение столбца")
     public void updateColumn(
             @PathVariable Long columnId,
             @RequestBody UpdateColumnRequest request
@@ -222,6 +258,7 @@ public class TaskController {
     }
 
     @PatchMapping("/boards/{boardId}/columns/{columnId}/move")
+    @Operation(summary = "Изменение положения столбца на доске")
     public void moveColumn(
             @PathVariable Long boardId,
             @PathVariable Long columnId,
@@ -239,26 +276,10 @@ public class TaskController {
     }
 
     @DeleteMapping("/boards/{boardId}/columns/{columnId}")
+    @Operation(summary = "Удаление столбца")
     public void deleteColumn(
-            @PathVariable Long boardId,
             @PathVariable Long columnId
     ) {
         boardService.deleteColumn(columnId);
-    }
-
-    // Перемещение задачи между колонками
-    @PatchMapping("/{taskId}/move")
-    public void moveTask(
-            @PathVariable Long taskId,
-            @RequestBody MoveTaskRequest request
-    ) {
-
-        MoveTaskRequest updatedRequest =
-                new MoveTaskRequest(
-                        taskId,
-                        request.newColumnId()
-                );
-
-        boardService.moveTask(updatedRequest);
     }
 }

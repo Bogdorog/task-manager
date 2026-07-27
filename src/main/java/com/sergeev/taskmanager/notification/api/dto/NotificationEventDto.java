@@ -4,14 +4,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 
-@Schema(description = "Полная модель данных пользователя")
+@Schema(description = "Модель уведомления")
 public record NotificationEventDto(
-        @Schema(description = "Уникальный идентификатор пользователя",
+        @Schema(description = "Уникальный идентификатор уведомления",
                 example = "123")
         Long id,
         @Schema(description = "Тип уведомления",
                 example = "TASK_ASSIGNED")
         String type,
+        @Schema(description = "Название компании, связанной с уведомлением",
+                example = "123")
+        String companyName,
         @Schema(description = "Содержание уведомления")
         Object payload,
         @Schema(description = "Время создания уведомления")

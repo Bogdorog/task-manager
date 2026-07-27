@@ -15,8 +15,8 @@ public class NotificationApiImpl implements NotificationApi {
     private final NotificationMapper mapper;
 
     @Override
-    public void notifyUser(Long userId, String type, Object payload) {
-        Notification saved = persistenceService.save(userId, type, payload);
+    public void notifyUser(Long userId, Long companyId, String type, Object payload) {
+        Notification saved = persistenceService.save(userId, companyId, type, payload);
         emitterRegistry.send(userId, mapper.toDto(saved));
     }
 }

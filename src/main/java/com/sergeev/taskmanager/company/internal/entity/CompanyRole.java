@@ -1,5 +1,6 @@
 package com.sergeev.taskmanager.company.internal.entity;
 
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import jakarta.persistence.*;
 import lombok.*;
 

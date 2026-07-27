@@ -1,5 +1,6 @@
 package com.sergeev.taskmanager.company.internal.service;
 
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.api.dto.CompanyDto;
 import com.sergeev.taskmanager.company.api.dto.request.CreateCompanyRequest;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteCompanyRequest;
@@ -7,7 +8,6 @@ import com.sergeev.taskmanager.company.api.dto.request.TransferOwnershipRequest;
 import com.sergeev.taskmanager.company.internal.entity.Company;
 import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
 import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
@@ -190,5 +190,10 @@ public class CompanyService {
         } else throw new AccessDeniedException(
                 "Недостаточно прав"
         );
+    }
+
+    public String getCompanyNameById(Long companyId)
+    {
+        return companyRepository.findCompanyNameById(companyId);
     }
 }

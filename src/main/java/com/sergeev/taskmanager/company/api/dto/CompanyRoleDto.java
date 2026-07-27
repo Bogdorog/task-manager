@@ -1,6 +1,6 @@
 package com.sergeev.taskmanager.company.api.dto;
 
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 
 import java.util.Set;
 

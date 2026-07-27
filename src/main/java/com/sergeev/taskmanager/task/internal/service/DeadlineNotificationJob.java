@@ -45,7 +45,7 @@ public class DeadlineNotificationJob {
         List<Task> tasks = taskRepository.findApproachingDeadline(now, threshold, EXCLUDED_STATUSES);
         for (Task task : tasks) {
             eventPublisher.publishEvent(new TaskDeadlineApproachingEvent(
-                    task.getId(), task.getTitle(), task.getBoardId(),
+                    task.getId(), taskRepository.findCompanyIdByTaskId(task.getId()), task.getTitle(), task.getBoardId(),
                     task.getDueDate(), task.getCreatedBy(),
                     task.getAssignedTo() != null ? task.getAssignedTo() : null
             ));
@@ -60,7 +60,7 @@ public class DeadlineNotificationJob {
         List<Task> tasks = taskRepository.findOverdue(now, EXCLUDED_STATUSES);
         for (Task task : tasks) {
             eventPublisher.publishEvent(new TaskDeadlineOverdueEvent(
-                    task.getId(), task.getTitle(), task.getBoardId(),
+                    task.getId(), taskRepository.findCompanyIdByTaskId(task.getId()), task.getTitle(), task.getBoardId(),
                     task.getDueDate(), task.getCreatedBy(),
                     task.getAssignedTo() != null ? task.getAssignedTo() : null
             ));

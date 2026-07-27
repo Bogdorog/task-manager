@@ -1,9 +1,9 @@
 package com.sergeev.taskmanager.company.internal.mapper;
 
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
 import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
 import com.sergeev.taskmanager.company.internal.entity.Permission;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import org.mapstruct.Mapper;
 
 import java.util.Set;

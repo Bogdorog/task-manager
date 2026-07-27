@@ -1,15 +1,16 @@
 package com.sergeev.taskmanager.company.internal.service;
 
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
 import com.sergeev.taskmanager.company.api.dto.CompanyPermissionsDto;
 import com.sergeev.taskmanager.company.api.dto.ShortCompanyMembershipDto;
+import com.sergeev.taskmanager.company.api.dto.event.MemberAddedEvent;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteMemberRequest;
 import com.sergeev.taskmanager.company.api.dto.request.InviteUserRequest;
 import com.sergeev.taskmanager.company.api.dto.request.LeaveCompanyRequest;
 import com.sergeev.taskmanager.company.internal.entity.Company;
 import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
 import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyMembershipMapper;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyPermissionMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
@@ -22,6 +23,7 @@ import com.sergeev.taskmanager.user.api.dto.UserDto;
 import com.sergeev.taskmanager.user.api.dto.UserShortDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-//TODO Переписать получение членства на метод из CheckPermissionService
 
 @Service
 @RequiredArgsConstructor
@@ -47,10 +47,12 @@ public class CompanyMembershipService {
     private final CompanyMembershipMapper membershipMapper;
     private final CompanyPermissionMapper permissionMapper;
     private final SecurityFacadeApi securityFacade;
+    private final ApplicationEventPublisher publisher;
 
     public void inviteUser(InviteUserRequest request) {
+        Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
-                securityFacade.getCurrentUserId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.INVITE_USER.getTitle()
         );
@@ -101,6 +103,13 @@ public class CompanyMembershipService {
                         .build();
 
         membershipRepository.save(membership);
+        publisher.publishEvent(new MemberAddedEvent(
+                request.companyId(),
+                user.fullName(),
+                role.getName(),
+                actorId,
+                userApi.getUserById(actorId).fullName()
+        ));
     }
 
     public void removeUser(
@@ -224,7 +233,7 @@ public class CompanyMembershipService {
                             ? usersMap.get(membership.getUserId())
                             : null;
                     return new ShortCompanyMembershipDto(
-                            base.id(), user.fullName(), base.role());
+                            base.id(), Objects.requireNonNull(user).fullName(), base.role());
                 })
                 .toList();
     }

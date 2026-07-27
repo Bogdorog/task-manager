@@ -1,13 +1,11 @@
 package com.sergeev.taskmanager.task.api.event;
 
-import java.time.LocalDateTime;
-
-public record TaskDeadlineOverdueEvent(
+public record TaskUpdatedEvent(
         Long taskId,
-        Long companyId,
         String taskTitle,
         Long boardId,
-        LocalDateTime dueDate,
+        Long companyId,
+        Long actorId,
         Long creatorId,
         Long assigneeId
 ) {}

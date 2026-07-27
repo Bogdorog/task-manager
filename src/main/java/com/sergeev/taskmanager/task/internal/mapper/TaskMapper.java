@@ -8,11 +8,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TaskMapper {
-    // Для обратной конвертации (если нужно)
-    @Mapping(target = "assignedTo", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    Task toEntity(TaskDto dto);
-
     @Mapping(target = "assignedTo", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "companyId", source = "companyId")

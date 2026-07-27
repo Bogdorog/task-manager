@@ -24,13 +24,14 @@ public class NotificationPersistenceService {
     private final NotificationMapper mapper;
 
     @Transactional
-    public Notification save(Long userId, String type, Object payload) {
+    public Notification save(Long userId, Long companyId, String type, Object payload) {
         int retentionDays = settingsRepository.findById(userId)
                 .map(NotificationSettings::getRetentionDays)
                 .orElse(DEFAULT_RETENTION_DAYS);
 
         Notification notification = Notification.builder()
                 .userId(userId)
+                .companyId(companyId)
                 .type(type)
                 .payload(mapper.serializePayload(payload))
                 .expiresAt(LocalDateTime.now().plusDays(retentionDays))

@@ -1,7 +1,7 @@
 package com.sergeev.taskmanager.task.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.dto.*;
 import com.sergeev.taskmanager.task.internal.entity.Board;
@@ -246,7 +246,7 @@ public class TaskQueryService {
         List<BoardColumn> columns = columnRepository
                 .findAllByBoardIdOrderByPositionAsc(board.getId());
         Long actorId = securityFacadeApi.getCurrentUserId();
-        List<Task> tasks = List.of();
+        List<Task> tasks;
         if (permissionApi.checkCanViewTasks(actorId, board.getCompanyId()))
         {
             tasks = taskRepository.findAllByBoardId(board.getId());

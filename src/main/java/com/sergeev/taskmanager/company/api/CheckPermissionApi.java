@@ -2,6 +2,8 @@ package com.sergeev.taskmanager.company.api;
 
 import com.sergeev.taskmanager.task.api.dto.TaskDto;
 
+import java.util.List;
+
 public interface CheckPermissionApi {
 
     void checkCompanyPermission(Long userId, Long companyId, String permission);
@@ -15,4 +17,6 @@ public interface CheckPermissionApi {
     void checkCanViewTask(Long userId, TaskDto task);
 
     boolean checkCanViewTasks(Long userId, Long companyId);
+
+    List<Long> findUserIdsWithPermission(Long companyId, PermissionEnum permission);
 }

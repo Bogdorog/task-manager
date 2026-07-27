@@ -1,17 +1,24 @@
 package com.sergeev.taskmanager.company.internal.service;
 
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
+import com.sergeev.taskmanager.company.api.dto.event.RoleAddedEvent;
 import com.sergeev.taskmanager.company.api.dto.request.AssignRoleRequest;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteRoleRequest;
 import com.sergeev.taskmanager.company.api.dto.request.RoleRequest;
-import com.sergeev.taskmanager.company.internal.entity.*;
+import com.sergeev.taskmanager.company.internal.entity.Company;
+import com.sergeev.taskmanager.company.internal.entity.CompanyMembership;
+import com.sergeev.taskmanager.company.internal.entity.CompanyRole;
+import com.sergeev.taskmanager.company.internal.entity.Permission;
 import com.sergeev.taskmanager.company.internal.mapper.CompanyRoleMapper;
 import com.sergeev.taskmanager.company.internal.repository.CompanyMembershipRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRepository;
 import com.sergeev.taskmanager.company.internal.repository.CompanyRoleRepository;
 import com.sergeev.taskmanager.company.internal.repository.PermissionRepository;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
+import com.sergeev.taskmanager.user.api.UserApi;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,13 +42,13 @@ public class CompanyRoleService {
     private final CheckPermissionService permissionService;
     private final SecurityFacadeApi securityFacade;
     private final CompanyRoleMapper mapper;
+    private final ApplicationEventPublisher publisher;
+    private final UserApi userApi;
 
-    // =========================
-    // CREATE ROLE
-    // =========================
     public void createRole(RoleRequest request) {
+        Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
-                securityFacade.getCurrentUserId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.MANAGE_ROLES.name()
         );
@@ -81,6 +88,12 @@ public class CompanyRoleService {
                 .build();
 
         roleRepository.save(role);
+        publisher.publishEvent(new RoleAddedEvent(
+                request.companyId(),
+                role.getName(),
+                actorId,
+                userApi.getUserById(actorId).fullName()
+        ));
     }
 
 
@@ -138,9 +151,6 @@ public class CompanyRoleService {
         role.setPermissions(permissions);
     }
 
-    // =========================
-    // DELETE ROLE
-    // =========================
     public void deleteRole(DeleteRoleRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
@@ -171,9 +181,6 @@ public class CompanyRoleService {
         roleRepository.delete(role);
     }
 
-    // =========================
-    // GET ROLES
-    // =========================
     @Transactional(readOnly = true)
     public List<CompanyRoleDto> getRoles(
             Long companyId,
@@ -193,9 +200,6 @@ public class CompanyRoleService {
                 .toList();
     }
 
-    // =========================
-    // GET ROLE
-    // =========================
     @Transactional(readOnly = true)
     public CompanyRole getRole(
             Long companyId,
@@ -220,9 +224,6 @@ public class CompanyRoleService {
         return role;
     }
 
-    // =========================
-    // ASSIGN ROLE
-    // =========================
     public void assignRole(AssignRoleRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
@@ -264,7 +265,6 @@ public class CompanyRoleService {
     // =========================
     // HELPERS
     // =========================
-
     private Set<Permission> resolvePermissions(
             Set<PermissionEnum> permissions
     ) {

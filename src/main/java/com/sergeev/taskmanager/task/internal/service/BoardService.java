@@ -1,7 +1,7 @@
 package com.sergeev.taskmanager.task.internal.service;
 
 import com.sergeev.taskmanager.company.api.CheckPermissionApi;
-import com.sergeev.taskmanager.company.internal.entity.PermissionEnum;
+import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.security.api.SecurityFacadeApi;
 import com.sergeev.taskmanager.task.api.dto.BoardColumnDto;
 import com.sergeev.taskmanager.task.api.dto.BoardDto;
@@ -199,7 +199,6 @@ public class BoardService {
                 );
 
         if (hasTasks) {
-
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Нельзя удалить колонку с задачами"
@@ -227,6 +226,7 @@ public class BoardService {
         );
 
         BoardColumn targetColumn = getColumn(request.newColumnId());
+        Long companyId = taskRepository.findCompanyIdByTaskId(request.taskId());
 
         validateSameBoard(
                 getColumn(task.getColumnId()),
@@ -235,7 +235,7 @@ public class BoardService {
         Long actorId = securityFacade.getCurrentUserId();
         permissionApi.checkCompanyPermission(
                 actorId,
-                taskRepository.findCompanyIdByTaskId(request.taskId()),
+                companyId,
                 PermissionEnum.UPDATE_TASK.name()
         );
 
@@ -244,6 +244,7 @@ public class BoardService {
         publisher.publishEvent(new TaskMovedEvent(
                 task.getId(),
                 task.getTitle(),
+                companyId,
                 targetColumn.getBoard().getId(),
                 task.getColumnId(),
                 getColumn(task.getColumnId()).getName(),

@@ -1,4 +1,4 @@
-package com.sergeev.taskmanager.company.internal.entity;
+package com.sergeev.taskmanager.company.api;
 
 import lombok.Getter;
 
