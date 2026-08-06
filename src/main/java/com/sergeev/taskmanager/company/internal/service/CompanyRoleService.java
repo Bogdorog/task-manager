@@ -2,7 +2,10 @@ package com.sergeev.taskmanager.company.internal.service;
 
 import com.sergeev.taskmanager.company.api.PermissionEnum;
 import com.sergeev.taskmanager.company.api.dto.CompanyRoleDto;
+import com.sergeev.taskmanager.company.api.dto.event.MemberRoleChangedEvent;
 import com.sergeev.taskmanager.company.api.dto.event.RoleAddedEvent;
+import com.sergeev.taskmanager.company.api.dto.event.RoleChangedEvent;
+import com.sergeev.taskmanager.company.api.dto.event.RoleDeletedEvent;
 import com.sergeev.taskmanager.company.api.dto.request.AssignRoleRequest;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteRoleRequest;
 import com.sergeev.taskmanager.company.api.dto.request.RoleRequest;
@@ -102,10 +105,12 @@ public class CompanyRoleService {
      * @param roleId ID редактируемой роли
      * @param request Тело запроса на редактирование роли
      */
+    @Transactional
     public void updateRole(Long roleId, RoleRequest request) {
 
+        Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
-                securityFacade.getCurrentUserId(),
+                actorId,
                 request.companyId(),
                 PermissionEnum.MANAGE_ROLES.name()
         );
@@ -149,8 +154,15 @@ public class CompanyRoleService {
         role.setName(request.name().trim().toUpperCase());
         role.setDescription(request.description());
         role.setPermissions(permissions);
+        publisher.publishEvent(new RoleChangedEvent(
+                request.companyId(),
+                role.getName(),
+                actorId,
+                userApi.getUserById(actorId).fullName()
+        ));
     }
 
+    @Transactional
     public void deleteRole(DeleteRoleRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
@@ -179,6 +191,12 @@ public class CompanyRoleService {
         }
 
         roleRepository.delete(role);
+        publisher.publishEvent(new RoleDeletedEvent(
+                request.companyId(),
+                role.getName(),
+                actorId,
+                userApi.getUserById(actorId).fullName()
+        ));
     }
 
     @Transactional(readOnly = true)
@@ -224,6 +242,7 @@ public class CompanyRoleService {
         return role;
     }
 
+    @Transactional
     public void assignRole(AssignRoleRequest request) {
         Long actorId = securityFacade.getCurrentUserId();
         permissionService.checkCompanyPermission(
@@ -260,6 +279,13 @@ public class CompanyRoleService {
         protectOwnerRole(role);
 
         membership.setRole(role);
+        publisher.publishEvent(new MemberRoleChangedEvent(
+                request.companyId(),
+                userApi.getUserById(membership.getUserId()).fullName(),
+                role.getName(),
+                actorId,
+                userApi.getUserById(actorId).fullName()
+        ));
     }
 
     // =========================

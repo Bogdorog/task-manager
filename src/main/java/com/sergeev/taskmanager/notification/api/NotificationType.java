@@ -1,5 +1,5 @@
 package com.sergeev.taskmanager.notification.api;
-
+//TODO Добавить новые виды уведомлений
 public enum NotificationType {
     TASK_CREATED("TASK_CREATED"),
     TASK_UPDATED("TASK_UPDATED"),
@@ -9,7 +9,12 @@ public enum NotificationType {
     TASK_DEADLINE_APPROACHING("TASK_DEADLINE_APPROACHING"),
     TASK_DEADLINE_OVERDUE("TASK_DEADLINE_OVERDUE"),
     MEMBER_ADDED("MEMBER_ADDED"),
-    ROLE_ADDED("ROLE_ADDED");
+    MEMBER_ROLE_CHANGED("MEMBER_ROLE_CHANGED"),
+    MEMBER_DELETED("MEMBER_DELETED"),
+    MEMBER_LEFT("MEMBER_LEFT"),
+    ROLE_ADDED("ROLE_ADDED"),
+    ROLE_CHANGED("ROLE_CHANGED"),
+    ROLE_DELETED("ROLE_DELETED");
 
     private final String title;
 

@@ -5,6 +5,8 @@ import com.sergeev.taskmanager.company.api.dto.CompanyMembershipDto;
 import com.sergeev.taskmanager.company.api.dto.CompanyPermissionsDto;
 import com.sergeev.taskmanager.company.api.dto.ShortCompanyMembershipDto;
 import com.sergeev.taskmanager.company.api.dto.event.MemberAddedEvent;
+import com.sergeev.taskmanager.company.api.dto.event.MemberDeletedEvent;
+import com.sergeev.taskmanager.company.api.dto.event.MemberLeftEvent;
 import com.sergeev.taskmanager.company.api.dto.request.DeleteMemberRequest;
 import com.sergeev.taskmanager.company.api.dto.request.InviteUserRequest;
 import com.sergeev.taskmanager.company.api.dto.request.LeaveCompanyRequest;
@@ -112,6 +114,7 @@ public class CompanyMembershipService {
         ));
     }
 
+    @Transactional
     public void removeUser(
             DeleteMemberRequest request
     ) throws BusinessRuleException {
@@ -148,8 +151,16 @@ public class CompanyMembershipService {
             throw new BusinessRuleException("Нельзя удалить самого себя");
         }
         membershipRepository.delete(membership);
+        publisher.publishEvent(new MemberDeletedEvent(
+                request.companyId(),
+                userApi.getUserById(membership.getUserId()).fullName(),
+                membership.getRole().getName(),
+                actorId,
+                userApi.getUserById(actorId).fullName()
+        ));
     }
 
+    @Transactional
     public void leaveCompany(
             LeaveCompanyRequest request
     ) throws BusinessRuleException {
@@ -171,6 +182,11 @@ public class CompanyMembershipService {
         }
 
         membershipRepository.delete(membership);
+        publisher.publishEvent(new MemberLeftEvent(
+                request.companyId(),
+                userApi.getUserById(membership.getUserId()).fullName(),
+                membership.getRole().getName()
+        ));
     }
 
     /**
