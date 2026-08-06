@@ -128,7 +128,7 @@ public class NotificationListener {
             notificationApi.notifyUser(recipientId, event.companyId(),
                     NotificationType.MEMBER_ADDED.toString(), Map.of(
                     "companyId", event.companyId(),
-                    "newMemberName", event.newMemberName(),
+                    "memberName", event.memberName(),
                     "roleName", event.roleName(),
                     "actorName", event.actorName()
             ));
@@ -183,7 +183,7 @@ public class NotificationListener {
             notificationApi.notifyUser(recipientId, event.companyId(),
                     NotificationType.MEMBER_LEFT.toString(), Map.of(
                     "companyId", event.companyId(),
-                    "memberName", event.memberName(),
+                    "actorName", event.actorName(),
                     "roleName", event.roleName()
             ));
         }
